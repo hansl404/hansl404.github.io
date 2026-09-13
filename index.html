@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta
+			name="description"
+			content="Han Lim — software developer and Johns Hopkins CS graduate student with interests in languages, aviation, and international patient support."
+		/>
+		<meta name="theme-color" content="#0b0e11" />
+		<title>Han Lim - Portfolio</title>
+		<link rel="stylesheet" href="assets/map/leaflet.css" />
+		<link rel="stylesheet" href="styles.css" />
+		<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+	</head>
+	<body>
+		<a class="skip" href="#main">Skip to content</a>
+		<header class="site-header">
+			<div class="nav wrap">
+				<a class="brand" href="#" aria-label="Han Lim home"
+					>HAN LIM<span class="brand-dot">.</span></a
+				>
+				<div class="nav-tools">
+					<nav aria-label="Main navigation">
+						<a href="#experience-anchor">Experience</a><a href="#languages-anchor">Languages</a
+						><a href="#places-anchor">Places</a><a href="#work-anchor">Work</a
+						><a href="#contact-anchor" class="nav-contact"
+							>Let’s connect <span aria-hidden="true">↗</span></a
+						>
+					</nav>
+					<div class="language-toggle language-dropdown">
+						<button
+							type="button"
+							id="language-menu-button"
+							aria-haspopup="listbox"
+							aria-expanded="false"
+							aria-label="Language selection"
+						>
+							<span>English</span>
+						</button>
+						<ul id="language-menu" role="listbox" aria-label="Language selection">
+							<li role="option" aria-selected="true" data-language="en" tabindex="-1"><span class="language-flag" aria-hidden="true">🇬🇧</span>English</li>
+							<li role="option" aria-selected="false" data-language="ko" tabindex="-1"><span class="language-flag" aria-hidden="true">🇰🇷</span>한국어</li>
+							<li role="option" aria-selected="false" data-language="zh-CN" tabindex="-1"><span class="language-flag" aria-hidden="true">🇨🇳</span>简体中文</li>
+							<li role="option" aria-selected="false" data-language="zh-TW" tabindex="-1"><span class="language-flag" aria-hidden="true">🇹🇼</span>繁體中文</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</header>
+		<main id="main">
+			<section class="hero wrap">
+				<div class="hero-co py">
+					<p class="eyebrow">DEVELOPER · LANGUAGE LEARNER · CONNECTOR</p>
+					<h1>
+						Building software.<br /><span>Connecting cultures.</span><br />
+					</h1>
+					<p class="intro">
+						I’m Han, a developer and computer science graduate student at Johns
+						Hopkins. I’m interested in how technology and thoughtful
+						communication can make everyday experiences better.
+                    </p>
+					<div class="actions">
+						<a class="button primary" href="#work-anchor"
+							>Explore my work <span aria-hidden="true">↓</span></a
+						><a
+							class="button text-link resume-link"
+							href="han-lim-resume.pdf"
+							download
+							>Download resume <span aria-hidden="true">↗</span></a
+						>
+					</div>
+				</div>
+				<aside class="profile" aria-label="At a glance">
+					<div class="profile-top">
+						<span>HAN LIM / AT A GLANCE</span><span>01</span>
+					</div>
+					<div class="profile-intro">
+						<img
+							class="profile-photo"
+							src="assets/profile/han-lim.jpg"
+							alt="Portrait of Han Lim"
+							width="1024"
+							height="1536"
+						/>
+						<div class="greetings">
+							<span lang="en">Hello.</span><span lang="ko">안녕하세요.</span
+							><span lang="zh-Hant">你好。</span>
+						</div>
+					</div>
+					<div class="profile-bottom">
+						<p>
+							Technology is my background.<br />Languages are a lifelong
+							pursuit.
+						</p>
+						<div class="profile-line">
+							<span>CURRENT STUDY</span
+							><strong
+								>M.S. Computer Science<br />Johns Hopkins University</strong
+							>
+						</div>
+						<div class="profile-line">
+							<span>EXPLORING</span
+							><strong
+								>Development · Aviation service<br />Medical coordination &
+								translation</strong
+							>
+						</div>
+					</div>
+				</aside>
+			</section>
+			<div class="credentials">
+				<div class="wrap credential-inner">
+					<span>EXPERIENCE ACROSS</span>
+					<div class="institution-logo logo-jhu">
+						<img
+							src="https://www.jhu.edu/assets/themes/machado/src/assets/images/logos/university-logo-small-horizontal-white.png"
+							alt="Johns Hopkins University"
+							width="210"
+							height="74"
+							loading="lazy"
+						/>
+					</div>
+					<div class="institution-logo logo-ey">
+						<img
+							src="assets/logos/ey.svg"
+							alt="EY"
+							width="1000"
+							height="402"
+							loading="lazy"
+						/>
+					</div>
+					<div class="institution-logo logo-amazon">
+						<img
+							src="assets/logos/amazon.svg"
+							alt="Amazon"
+							width="100"
+							height="33"
+							loading="lazy"
+						/>
+					</div>
+					<div class="institution-logo logo-unc">
+						<img
+							src="assets/logos/unc.svg"
+							alt="University of North Carolina at Chapel Hill"
+							width="232"
+							height="72"
+							loading="lazy"
+						/>
+					</div>
+				</div>
+			</div>
+			<section id="work" class="section wrap">
+				<div id="work-anchor" class="section-heading section-anchor">
+					<div>
+						<p class="eyebrow">04 / SELECTED WORK</p>
+						<h2>Useful tools.<br />Real-world contexts.</h2>
+					</div>
+					<p>
+						From coordinating a ride to making medical research data easier to explore,
+						I am passionate about helping improve medicine and transportation by building around practical needs.
+					</p>
+				</div>
+				<div class="projects">
+					<article class="project">
+						<div class="project-meta">
+							<span>HEALTHCARE + AI</span><span>01</span>
+						</div>
+						<h3>Discovery Agent 1.0</h3>
+						<p>
+							A natural-language interface for the A2CPS chronic pain research
+							dataset, developed with the Johns Hopkins Bloomberg School of
+							Public Health on an NIH-funded project.
+						</p>
+						<p class="project-detail">
+							Translated questions into SQL and query results into natural
+							language, using retrieval-augmented generation with attention to
+							patient privacy and HIPAA requirements.
+						</p>
+						<div class="tags">
+							<span>Claude</span><span>SQL</span><span>RAG</span>
+						</div>
+						<div class="project-foot">Research work · Jan–May 2026</div>
+					</article>
+					<article class="project">
+						<div class="project-meta">
+							<span>TRAVEL + COMMUNITY</span><span>02</span>
+						</div>
+						<h3>HopShare</h3>
+						<p>
+							A web app helping Johns Hopkins students coordinate rides to
+							similar destinations and split the cost.
+						</p>
+						<p class="project-detail">
+							Built with Google sign-in and Maps integration to support a more
+							convenient rideshare experience.
+						</p>
+						<div class="tags">
+							<span>React</span><span>MongoDB</span><span>Google APIs</span>
+						</div>
+						<div class="project-foot">Student rideshare platform</div>
+					</article>
+					<article class="project">
+						<div class="project-meta">
+							<span>HEALTHCARE + OPERATIONS</span><span>03</span>
+						</div>
+						<h3>Dental clinic volunteer portal</h3>
+						<p>
+							An administrative portal developed with a local dental clinic to
+							manage volunteer shifts, information, and statistics.
+						</p>
+						<div class="tags">
+							<span>Next.js</span><span>Tailwind CSS</span><span>Supabase</span>
+						</div>
+						<div class="project-foot">Volunteer management system</div>
+					</article>
+					<article class="project">
+						<div class="project-meta">
+							<span>AVIATION + DATA</span><span>04</span>
+						</div>
+						<h3>Clearcost Flights</h3>
+						<p>
+							A flight comparison site combining live Google Flights prices with
+							information such as mileage earned to give a fuller picture of
+							travel cost.
+						</p>
+						<div class="tags">
+							<span>SerpAPI</span><span>Flight pricing</span><span>Vercel</span>
+						</div>
+						<div class="project-foot">Travel decision support</div>
+					</article>
+				</div>
+				<a
+					class="text-link github"
+					href="https://github.com/hansl404"
+					target="_blank"
+					rel="noopener noreferrer"
+					>Visit my GitHub <span aria-hidden="true">↗</span></a
+				>
+			</section>
+			<section id="experience" class="experience section">
+				<div id="experience-anchor" class="wrap experience-grid section-anchor">
+					<div>
+						<p class="eyebrow">01 / EXPERIENCE</p>
+						<h2>A technical foundation.<br />A practical mindset.</h2>
+						<p class="section-intro">
+							Experience in software development, project management, teaching assistant, and tutoring.
+						</p>
+						<div class="education">
+							<span class="eyebrow">EDUCATION</span>
+							<h3>Johns Hopkins University</h3>
+							<p>M.S. Computer Science<br />Expected December 2027</p>
+						</div>
+						<div class="education">
+							<span class="eyebrow">EDUCATION</span>
+							<h3>University of North Carolina at Chapel Hill</h3>
+							<p>B.S. Computer Science<br />August 2019 – May 2023</p>
+						</div>
+						<div class="education">
+							<span class="eyebrow">SUPPLEMENTAL EDUCATION</span>
+							<h3>National Taiwan Normal University</h3>
+							<p>Mandarin Training Center<br />December 2026 - February 2027</p>
+						</div>
+					</div>
+					<div class="timeline">
+						<article>
+							<div class="role-meta">
+								<span>JAN–MAY 2026</span><span>BALTIMORE, MD</span>
+							</div>
+							<h3>AI Engineer</h3>
+							<p class="company">
+								Johns Hopkins Bloomberg School of Public Health
+							</p>
+							<p>
+								Helped make chronic pain research data accessible through
+								natural-language queries and explanations, with a focus on
+								accuracy and patient privacy.
+							</p>
+						</article>
+						<article>
+							<div class="role-meta">
+								<span>AUG 2024–OCT 2025</span><span>NEW YORK, NY</span>
+							</div>
+							<h3>Technology Consultant</h3>
+							<p class="company">EY</p>
+							<p>
+								Supported project management for AI and Services Disruption
+								teams. Organized Azure DevOps user stories and the backlog to
+								keep language consistent and support Agile delivery.
+							</p>
+						</article>
+						<article>
+							<div class="role-meta">
+								<span>MAY–AUG 2022</span><span>SEATTLE, WA</span>
+							</div>
+							<h3>Software Engineer Intern</h3>
+							<p class="company">Amazon</p>
+							<p>
+								Refactored Kotlin APIs for purchasing Audible books through
+								Alexa, reducing latency by approximately 100 ms in production.
+								Reorganized team documentation so any document was within three
+								clicks of the home page.
+							</p>
+						</article>
+						<article>
+							<div class="role-meta"><span>AUG 2021–OCT 2025</span></div>
+							<h3>Tutor</h3>
+							<p class="company">Juni Learning</p>
+							<p>
+								Taught Python, Java, JavaScript, HTML, and CSS to students in
+								grades 6–12.
+							</p>
+						</article>
+						<article>
+							<div class="role-meta"><span>AUG 2021–MAY 2023</span></div>
+							<h3>Teaching Assistant</h3>
+							<p class="company">University of North Carolina at Chapel Hill</p>
+							<p>
+								Held office hours and exam review sessions, and graded
+								assignments and tests.
+							</p>
+						</article>
+					</div>
+				</div>
+				<div class="wrap skills">
+					<span class="eyebrow">TECHNICAL TOOLKIT</span>
+					<p>
+						JavaScript / TypeScript / Python / Java / SQL / React / Node.js /
+						AWS / PyTorch
+					</p>
+				</div>
+			</section>
+			<section id="languages" class="section wrap">
+				<div id="languages-anchor" class="section-heading section-anchor">
+					<div>
+						<p class="eyebrow">02 / BEYOND THE CODE</p>
+						<h2>Language opens<br />another door.</h2>
+					</div>
+					<p>
+						Learning languages is a long-term part of my life. I want to bring
+						that commitment into work that helps people navigate unfamiliar
+						places and processes.
+					</p>
+				</div>
+				<div class="language-grid">
+					<article>
+						<span class="language-native" lang="en">Hello</span>
+						<h3>English</h3>
+						<p>U.S. citizen, primary language</p>
+					</article>
+					<article>
+						<span class="language-native" lang="ko">안녕하세요</span>
+						<h3>Korean</h3>
+						<p>Born in Pohang, Korean is my mother language</p>
+					</article>
+					<article>
+						<span class="language-native" lang="zh-Hant">你好</span>
+						<h3>Mandarin Chinese</h3>
+						<p>
+							HSK Level 5 certified · Continuing to develop speaking and
+							listening skills
+						</p>
+					</article>
+				</div>
+				<div class="direction">
+					<div>
+						<p class="eyebrow">WHERE I’D LIKE TO CONTRIBUTE</p>
+						<h3>People-facing work,<br />with a technical perspective.</h3>
+					</div>
+					<div>
+						<h4>Flight/Travel logistics</h4>
+						<p>
+							I’m interested in helping international travelers, supporting
+							clear communication, and learning the operational side of
+							passenger service. My travel projects reflect a broader interest
+							in aviation.
+						</p>
+						<h4>Medical coordination & language support</h4>
+						<p>
+							I’m also exploring medical coordinator and translation roles. My
+							healthcare technology projects have strengthened my interest in
+							clear information, organized workflows, and privacy-conscious
+							service.
+						</p>
+					</div>
+				</div>
+			</section>
+			<section
+				id="places"
+				class="section wrap places-section"
+				aria-labelledby="places-heading"
+			>
+				<div id="places-anchor" class="section-heading section-anchor">
+					<div>
+						<p class="eyebrow">03 / PLACES & PERSPECTIVES</p>
+						<h2 id="places-heading">A few places<br />that shaped my world.</h2>
+					</div>
+					<p>
+						From places I’ve called home to cities I’ve explored.
+						<span data-place-count="lived">10</span> lived in,
+						<span data-place-count="visited">33</span> visited, and plenty more to discover.
+					</p>
+				</div>
+				<div class="travel-panel">
+					<div class="map-toolbar">
+						<div class="map-filters" role="group" aria-label="Filter places">
+							<button type="button" data-map-filter="all" aria-pressed="true">
+								All <span data-place-count="total">43</span></button
+							><button
+								type="button"
+								data-map-filter="lived"
+								aria-pressed="false"
+							>
+								<span class="map-key lived-key" aria-hidden="true"></span>Lived
+								in <span data-place-count="lived">9</span></button
+							><button
+								type="button"
+								data-map-filter="visited"
+								aria-pressed="false"
+							>
+								<span class="map-key visited-key" aria-hidden="true"></span
+								>Visited <span data-place-count="visited">34</span>
+							</button>
+						</div>
+						<button type="button" id="map-reset">Reset view ↗</button>
+					</div>
+					<div
+						id="travel-map"
+						aria-label="Interactive world map of places lived in and visited"
+					></div>
+					<div class="map-caption">
+						<p id="map-status" aria-live="polite">
+							<span data-place-count="total">43</span> places · Select a pin or a city below.
+						</p>
+						<span>Drag to explore · Use + / − to zoom</span>
+					</div>
+				</div>
+				<details class="place-directory">
+					<summary>Explore the city list <span><span data-place-count="total">43</span> places</span></summary>
+					<div class="place-groups">
+						<div>
+							<h3>
+								<span class="map-key lived-key" aria-hidden="true"></span>Lived in
+							</h3>
+							<ul>
+								<li>
+									<button type="button" data-place="0">Pohang</button>
+								</li>
+								<li>
+									<button type="button" data-place="1">Seoul</button>
+								</li>
+								<li>
+									<button type="button" data-place="2">West Lafayette</button>
+								</li>
+								<li>
+									<button type="button" data-place="3">Minneapolis</button>
+								</li>
+								<li>
+									<button type="button" data-place="4">Raleigh</button>
+								</li>
+								<li>
+									<button type="button" data-place="5">New York City</button>
+								</li>
+								<li>
+									<button type="button" data-place="6">Seattle</button>
+								</li>
+								<li>
+									<button type="button" data-place="7">Baltimore</button>
+								</li>
+								<li>
+									<button type="button" data-place="42">Gangneung</button>
+								</li>
+                                <li>
+                                    <button type="button" data-place="26">Taipei</button>
+                                </li>
+							</ul>
+						</div>
+						<div>
+							<h3>
+								<span class="map-key visited-key" aria-hidden="true"></span
+								>Visited
+							</h3>
+							<ul>
+								<li><button type="button" data-place="8">Chicago</button></li>
+								<li><button type="button" data-place="9">Miami</button></li>
+								<li><button type="button" data-place="10">Dallas</button></li>
+								<li><button type="button" data-place="11">Los Angeles</button></li>
+								<li><button type="button" data-place="12">San Francisco</button></li>
+								<li><button type="button" data-place="13">Hong Kong</button></li>
+								<li><button type="button" data-place="14">Shanghai</button></li>
+								<li><button type="button" data-place="15">Beijing</button></li>
+								<li><button type="button" data-place="16">Tianjin</button></li>
+								<li><button type="button" data-place="17">Harbin</button></li>
+								<li><button type="button" data-place="18">Tokyo</button></li>
+								<li><button type="button" data-place="19">Osaka</button></li>
+								<li><button type="button" data-place="20">Kyoto</button></li>
+								<li><button type="button" data-place="21">Sapporo</button></li>
+								<li><button type="button" data-place="22">Qingdao</button></li>
+								<li><button type="button" data-place="23">Guangzhou</button></li>
+								<li><button type="button" data-place="24">Shenzhen</button></li>
+								<li><button type="button" data-place="25">Melbourne</button></li>
+								<li><button type="button" data-place="27">Taichung</button></li>
+								<li><button type="button" data-place="28">Tainan</button></li>
+								<li><button type="button" data-place="29">Kaohsiung</button></li>
+								<li><button type="button" data-place="30">Chongqing</button></li>
+								<li><button type="button" data-place="31">Chengdu</button></li>
+								<li><button type="button" data-place="32">Vancouver</button></li>
+								<li><button type="button" data-place="33">Boston</button></li>
+								<li><button type="button" data-place="34">Philadelphia, PA</button></li>
+								<li><button type="button" data-place="35">Washington DC</button></li>
+								<li><button type="button" data-place="36">Atlanta</button></li>
+								<li><button type="button" data-place="37">Singapore</button></li>
+								<li><button type="button" data-place="38">Busan</button></li>
+								<li><button type="button" data-place="39">Phoenix</button></li>
+								<li><button type="button" data-place="40">Las Vegas</button></li>
+								<li><button type="button" data-place="41">Daegu</button></li>
+							</ul>
+						</div>
+					</div>
+				</details>
+				<noscript
+					><p>
+						Enable JavaScript to explore the map. All cities are listed above.
+					</p></noscript
+				>
+			</section>
+			<section id="contact" class="contact">
+				<div class="wrap contact-grid">
+					<div class="contact-copy">
+						<p id="contact-anchor" class="eyebrow">05 / GET IN TOUCH</p>
+						<h2>Let’s make<br />something <em>useful.</em></h2>
+						<p>
+							For development opportunities, international service roles,<br
+								class="desktop-break"
+							/>
+							or a conversation about where the two meet.
+						</p>
+						<a class="button primary email" href="mailto:limhanseo1@gmail.com"
+							>limhanseo1@gmail.com</a
+						>
+						<div class="contact-links">
+						<a
+							href="https://www.linkedin.com/in/han5010/"
+							target="_blank"
+							rel="noopener noreferrer"
+							>LinkedIn ↗</a
+						><a
+							href="https://github.com/hansl404"
+							target="_blank"
+							rel="noopener noreferrer"
+							>GitHub ↗</a
+						><a href="han-lim-resume.pdf" download>Resume ↓</a>
+						</div>
+					</div>
+					<div class="contact-visual" aria-hidden="true">
+						<img src="assets/contact/luminous-globe.png" alt="" width="641" height="360" loading="lazy" decoding="async" />
+					</div>
+					<footer>
+						<span>© <span id="year">2026</span> Han Lim</span
+						><span>Code. Language. Connection.</span
+						><a href="#">Back to top ↑</a>
+					</footer>
+				</div>
+			</section>
+		</main>
+		<script src="assets/map/leaflet.js"></script>
+		<script src="assets/map/world.js"></script>
+		<script src="assets/map/places.js"></script>
+		<script src="script.js"></script>
+		<script src="travel-map.js"></script>
+	</body>
+</html>
