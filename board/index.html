@@ -1,0 +1,1931 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f5f8">
+  <title>Codeboard - Coding Whiteboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17263c;
+      --muted: #77859a;
+      --line: #e7ebf1;
+      --blue: #3968e8;
+      --blue-dark: #244fc8;
+      --panel: #fff;
+      --canvas: #fcfdff;
+      --shadow: 0 8px 26px rgba(28, 44, 70, .08);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; overflow: hidden; color: var(--ink); }
+    button, input, textarea, select { font: inherit; }
+    button { color: inherit; }
+    #app { height: 100dvh; display: flex; flex-direction: column; min-width: 320px; background: #f3f5f8; }
+    .topbar {
+      height: 66px; flex: none; background: #fff; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: 18px; padding: 0 20px; z-index: 5;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 204px; }
+    .brand-mark {
+      width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+      color: #fff; background: linear-gradient(145deg, #4c7cf0, #2d5bd8);
+      box-shadow: 0 4px 9px rgba(57,104,232,.25);
+    }
+    .brand-mark svg { width: 20px; height: 20px; }
+    .brand-name { font-weight: 750; font-size: 15px; letter-spacing: -.025em; }
+    .brand-sub { font-size: 10px; color: #8995a7; margin-top: 1px; }
+    .board-title-wrap { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+    .title-input { border: 1px solid transparent; background: transparent; padding: 7px 9px; width: 180px; border-radius: 7px; font-size: 13px; font-weight: 650; }
+    .title-input:hover, .title-input:focus { border-color: #e6ebf3; outline: none; background: #fbfcfe; }
+    .save-state { display: flex; align-items: center; gap: 6px; color: #8491a4; font-size: 11px; white-space: nowrap; }
+    .save-dot { width: 7px; height: 7px; border-radius: 50%; background: #47b785; box-shadow: 0 0 0 3px #eaf8f1; }
+    .top-spacer { flex: 1; }
+    .top-divider { width: 1px; height: 27px; background: var(--line); }
+    .top-actions { display: flex; align-items: center; gap: 6px; }
+    .icon-button, .small-button {
+      border: 1px solid transparent; background: transparent; color: #526178; border-radius: 8px;
+      height: 34px; min-width: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      cursor: pointer; transition: background .15s, border-color .15s, color .15s;
+    }
+    .icon-button:hover, .small-button:hover { background: #f3f6fb; border-color: #e7ebf2; color: var(--ink); }
+    .icon-button:disabled { color: #c1c8d2; cursor: default; background: transparent; border-color: transparent; }
+    .icon-button svg, .small-button svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .small-button { border-color: #e5eaf1; padding: 0 11px; font-size: 12px; font-weight: 600; background: #fff; }
+    .primary-button { background: var(--blue); color: white; border-color: var(--blue); }
+    .primary-button:hover { background: var(--blue-dark); border-color: var(--blue-dark); color: white; }
+    .export-wrap { position: relative; }
+    .export-menu {
+      position: absolute; top: 42px; right: 0; width: 190px; background: #fff; border: 1px solid var(--line);
+      border-radius: 11px; padding: 5px; box-shadow: 0 14px 34px rgba(20,37,65,.16); z-index: 20;
+    }
+    .export-menu button { border: 0; width: 100%; background: transparent; padding: 10px 10px; text-align: left; border-radius: 7px; cursor: pointer; font-size: 12px; color: #35455d; }
+    .export-menu button:hover { background: #f3f6fb; }
+    .workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: 72px minmax(0, 1fr) 264px; }
+    .left-rail { background: #fff; border-right: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; padding: 14px 9px 10px; gap: 5px; z-index: 2; overflow-y: auto; }
+    .left-rail > * { flex-shrink: 0; }
+    .tool-button {
+      width: 48px; height: 45px; border: 1px solid transparent; border-radius: 10px; background: transparent;
+      color: #6c7b91; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      cursor: pointer; position: relative; transition: .15s;
+    }
+    .tool-button svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .tool-button .tool-label { font-size: 9px; line-height: 1; letter-spacing: .01em; }
+    .tool-button:hover { background: #f5f7fb; color: #314865; }
+    .tool-button.active { color: var(--blue); background: #edf2ff; border-color: #dce5ff; }
+    .rail-divider { height: 1px; width: 38px; background: #edf0f4; margin: 5px 0; }
+    .color-picker-wrap { margin-top: 7px; display: flex; flex-direction: column; align-items: center; gap: 5px; color: #8a96a9; font-size: 9px; }
+    .color-input { width: 28px; height: 28px; border: 2px solid #fff; border-radius: 50%; padding: 0; background: none; cursor: pointer; box-shadow: 0 0 0 1px #dce2eb; overflow: hidden; }
+    .color-input::-webkit-color-swatch-wrapper { padding: 0; }
+    .color-input::-webkit-color-swatch { border: 0; border-radius: 50%; }
+    .canvas-stage { min-width: 0; min-height: 0; padding: 15px; position: relative; }
+    .canvas-frame { height: 100%; width: 100%; overflow: hidden; border: 1px solid #e6eaf0; border-radius: 14px; background: var(--canvas); box-shadow: var(--shadow); position: relative; }
+    #boardSvg { width: 100%; height: 100%; display: block; touch-action: none; user-select: none; }
+    #boardSvg[data-tool="select"] { cursor: grab; }
+    #boardSvg[data-tool="pen"], #boardSvg[data-tool="rect"], #boardSvg[data-tool="arrow"], #boardSvg[data-tool="erase"] { cursor: crosshair; }
+    #boardSvg[data-tool="pan"] { cursor: grab; }
+    #boardSvg[data-tool="place"] { cursor: crosshair; }
+    .placement-hint { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 9px 12px; border: 1px solid #cbd8fa; border-radius: 9px; background: #fff; box-shadow: var(--shadow); font-size: 11px; max-width: calc(100% - 20px); }
+    .placement-hint button { border: 0; background: #edf2ff; color: #355dcc; border-radius: 5px; padding: 5px 8px; cursor: pointer; }
+    #boardSvg[data-tool="pan"].dragging, #boardSvg[data-tool="select"].dragging { cursor: grabbing; }
+    #boardSvg[data-tool="select"] .board-object { cursor: grab; }
+    #boardSvg[data-tool="select"] .board-object:active { cursor: grabbing; }
+    .code-controls:focus-visible, .array-controls:focus-visible, .arrow-controls:focus-visible, .tree-controls:focus-visible, .memory-controls:focus-visible, .linkedlist-controls:focus-visible { outline: none; }
+    .code-controls:focus-visible rect, .array-controls:focus-visible rect, .arrow-controls:focus-visible rect, .tree-controls:focus-visible rect, .memory-controls:focus-visible rect, .linkedlist-controls:focus-visible rect { stroke: #a8c8ff; stroke-width: 2; }
+    .empty-hint { pointer-events: none; position: absolute; inset: 0; display: grid; place-items: center; }
+    .empty-card { text-align: center; width: min(400px, calc(100% - 40px)); padding: 25px 28px; margin-top: -4px; }
+    .empty-icon { width: 50px; height: 50px; margin: 0 auto 14px; display: grid; place-items: center; border-radius: 15px; color: #5578d7; background: #eff3ff; }
+    .empty-icon svg { width: 25px; height: 25px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .empty-card h2 { margin: 0 0 7px; font-size: 17px; letter-spacing: -.03em; }
+    .empty-card p { margin: 0 auto; max-width: 330px; color: #7b899c; font-size: 12px; line-height: 1.65; }
+    .empty-shortcuts { margin-top: 16px; color: #9aa5b5; font-size: 10px; }
+    kbd { display: inline-block; font: inherit; color: #64728a; background: #fff; border: 1px solid #e0e5ec; border-radius: 4px; padding: 2px 5px; box-shadow: 0 1px 0 #e6eaf0; }
+    .zoom-controls { position: absolute; left: 29px; bottom: 28px; display: flex; align-items: center; background: #fff; border: 1px solid #e3e8ef; border-radius: 9px; box-shadow: 0 3px 9px rgba(22,39,68,.08); overflow: hidden; z-index: 1; }
+    .zoom-controls button { width: 32px; height: 31px; display: grid; place-items: center; background: transparent; border: 0; color: #66758c; cursor: pointer; font-size: 17px; }
+    .zoom-controls button:hover { background: #f4f6fa; }
+    .zoom-value { min-width: 48px; text-align: center; color: #68768c; font-size: 10px; border-left: 1px solid #edf0f4; border-right: 1px solid #edf0f4; padding: 0 5px; }
+    .canvas-tip { position: absolute; right: 29px; bottom: 32px; color: #a0aabc; font-size: 10px; pointer-events: none; }
+    .inspector { background: #fff; border-left: 1px solid var(--line); min-width: 0; display: flex; flex-direction: column; z-index: 2; }
+    .panel-head { padding: 17px 17px 13px; border-bottom: 1px solid #eff1f5; }
+    .panel-head h2 { margin: 0; font-size: 12px; font-weight: 720; letter-spacing: -.01em; }
+    .panel-head p { margin: 5px 0 0; font-size: 10px; line-height: 1.5; color: #8c98aa; }
+    .inspector-content { padding: 15px 16px; overflow: auto; flex: 1; }
+    .section-label { font-size: 9px; font-weight: 750; text-transform: uppercase; letter-spacing: .09em; color: #97a2b1; margin: 0 0 9px; }
+    .selection-empty { background: #f7f8fa; border: 1px dashed #dfe4eb; border-radius: 9px; padding: 13px; color: #7e8b9f; font-size: 11px; line-height: 1.55; }
+    .selection-card { border: 1px solid #e7ebf1; border-radius: 10px; overflow: hidden; margin-bottom: 17px; }
+    .selection-type { padding: 10px 11px; background: #f8f9fb; border-bottom: 1px solid #ebeff4; display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 650; }
+    .type-pill { width: 23px; height: 23px; display: grid; place-items: center; border-radius: 7px; background: #eaf0ff; color: #4d70d4; font-size: 10px; font-weight: 750; }
+    .selection-meta { padding: 10px 11px; color: #8490a1; font-size: 10px; line-height: 1.7; }
+    .selection-actions { display: flex; gap: 6px; padding: 0 11px 11px; }
+    .selection-actions button { flex: 1; border: 1px solid #e4e8ef; background: #fff; border-radius: 7px; min-height: 29px; color: #58677d; cursor: pointer; font-size: 10px; font-weight: 600; }
+    .selection-actions button:hover { background: #f5f7fa; }
+    .selection-actions .delete-selected { color: #c24d55; }
+    .traversal-panel { position: absolute; top: 12px; right: 12px; z-index: 5; width: min(300px, calc(100% - 24px)); padding: 13px; border: 1px solid #dfe5ee; border-radius: 10px; background: #fff; box-shadow: 0 5px 20px #20314b14; font-size: 11px; color: #46566e; }
+    .traversal-panel h3 { margin: 0 0 10px; font-size: 12px; overflow-wrap: anywhere; }
+    .traversal-options { display: flex; gap: 8px; }
+    .traversal-options label { flex: 1; min-width: 0; }
+    .traversal-options select { display: block; width: 100%; margin-top: 5px; padding: 6px 3px; border: 1px solid #dfe5ee; border-radius: 5px; background: #fff; color: #263850; font-size: 11px; }
+    .traversal-buttons { display: flex; gap: 5px; margin-top: 10px; }
+    .traversal-buttons button { flex: 1; padding: 7px 2px; border: 1px solid #dfe5ee; border-radius: 5px; background: #f5f8ff; color: #355dcc; cursor: pointer; font-size: 11px; }
+    .traversal-buttons button:disabled { opacity: .4; cursor: default; }
+    .traversal-help, .traversal-status { margin: 9px 0 0; line-height: 1.5; }
+    .traversal-output { margin-top: 7px; max-height: 72px; overflow: auto; overflow-wrap: anywhere; font: 11px/1.7 ui-monospace, monospace; }
+    .layer-section { margin-top: 20px; }
+    .shortcuts-section { margin-top: 20px; border-top: 1px solid #eff1f5; padding-top: 14px; }
+    .shortcuts-section summary { cursor: pointer; color: #596a84; font-size: 11px; font-weight: 700; }
+    .shortcuts-help { margin: 8px 0; color: #8490a1; font-size: 10px; line-height: 1.6; }
+    .shortcut-list { margin: 0; font-size: 10px; }
+    .shortcut-list > div { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f1f3f7; }
+    .shortcut-list dt { color: #5d6b81; }
+    .shortcut-list dd { margin: 0; flex-shrink: 0; text-align: right; }
+    .layers { display: flex; flex-direction: column; gap: 3px; }
+    .layer-row { display: flex; align-items: center; gap: 8px; padding: 8px 9px; border: 1px solid transparent; border-radius: 7px; color: #5d6b81; font-size: 10px; cursor: pointer; min-width: 0; }
+    .layer-row:hover { background: #f7f8fa; }
+    .layer-row.selected { background: #eef3ff; border-color: #dfe8ff; color: #355dcc; }
+    .layer-icon { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: #f0f2f6; font-size: 9px; font-weight: 750; flex: none; }
+    .layer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .layer-empty { color: #9aa5b3; font-size: 10px; padding: 5px 2px; }
+    .quickstart { border-top: 1px solid #eff1f5; padding: 14px 16px 16px; }
+    .quickstart-title { font-size: 10px; font-weight: 700; margin-bottom: 8px; }
+    .quickstart button { width: 100%; border: 1px solid #e4e9f1; background: #fff; color: #516178; text-align: left; border-radius: 8px; padding: 9px 10px; font-size: 10px; font-weight: 600; cursor: pointer; }
+    .quickstart button:hover { border-color: #cbd8fa; background: #f8faff; color: #385fcb; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 30; background: rgba(18,30,49,.32); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 18px; }
+    .modal-backdrop[hidden], [hidden] { display: none !important; }
+    .modal { width: min(590px, 100%); background: #fff; border-radius: 14px; box-shadow: 0 24px 65px rgba(13,28,51,.25); overflow: hidden; }
+    .modal-header { padding: 18px 20px 14px; border-bottom: 1px solid #edf0f4; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .modal-header h2 { font-size: 15px; margin: 0; letter-spacing: -.02em; }
+    .modal-header p { margin: 5px 0 0; color: #818da0; font-size: 11px; line-height: 1.5; }
+    .modal-close { border: 0; background: transparent; color: #8490a1; cursor: pointer; font-size: 20px; line-height: 1; padding: 1px 3px; }
+    .modal-body { padding: 17px 20px 19px; }
+    .memory-editors { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .memory-editors textarea { min-height: 170px; resize: vertical; font: 11px/1.6 ui-monospace, monospace; }
+    #memoryPanel { max-height: 60vh; overflow-y: auto; }
+    @media (max-width: 520px) { .memory-editors { grid-template-columns: 1fr; } }
+    .field-label { display: block; margin: 0 0 7px; color: #46566e; font-size: 11px; font-weight: 650; }
+    .field-help { color: #8b97a8; font-size: 10px; line-height: 1.5; margin-top: 7px; }
+    .modal-input, .code-editor { width: 100%; border: 1px solid #dfe5ee; border-radius: 8px; outline: none; padding: 11px 12px; color: #263850; font-size: 13px; background: #fcfdff; }
+    .modal-input:focus, .code-editor:focus { border-color: #809cf0; box-shadow: 0 0 0 3px #edf2ff; }
+    .code-editor { min-height: 252px; resize: vertical; background: #101a2b; color: #e4ebf6; border-color: #243149; font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; tab-size: 4; }
+    .code-editor:focus { border-color: #6c8ce9; box-shadow: 0 0 0 3px #eaf0ff; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; background: #fafbfc; border-top: 1px solid #edf0f4; }
+    .modal-footer button { height: 33px; border-radius: 7px; padding: 0 13px; cursor: pointer; font-size: 11px; font-weight: 650; border: 1px solid #dfe5ee; background: #fff; color: #5e6d83; }
+    .modal-footer .modal-submit { color: #fff; border-color: var(--blue); background: var(--blue); }
+    .modal-footer .modal-submit:hover { background: var(--blue-dark); }
+    .toast { position: fixed; z-index: 45; bottom: 22px; left: 50%; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; background: #20314b; color: #fff; border-radius: 8px; padding: 10px 14px; font-size: 11px; box-shadow: 0 9px 24px rgba(13,28,51,.22); transition: .22s; }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    @media (max-width: 1080px) { .workspace { grid-template-columns: 68px minmax(0,1fr) 228px; } .brand { min-width: 165px; } .title-input { width: 150px; } }
+    @media (max-width: 820px) {
+      .workspace { grid-template-columns: 58px minmax(0,1fr); }
+      .left-rail { padding-left: 5px; padding-right: 5px; }
+      .tool-button { width: 44px; }
+      .inspector { display: none; }
+      .brand { min-width: 40px; }
+      .brand-copy { display: none; }
+      .topbar { gap: 9px; padding: 0 11px; }
+      .title-input { width: 120px; }
+      .save-state { display: none; }
+      .canvas-stage { padding: 8px; }
+      .zoom-controls { left: 18px; bottom: 19px; }
+      .canvas-tip { display: none; }
+    }
+    @media (max-width: 520px) {
+      .topbar { height: 58px; }
+      .top-divider, #fullscreenButton, #importButton { display: none; }
+      .top-actions { gap: 2px; }
+      .small-button { padding: 0 8px; }
+      .small-button .button-long { display: none; }
+      .board-title-wrap { min-width: 0; }
+      .title-input { width: 112px; }
+      .empty-card { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5 12 3l8 2.5v13L12 21l-8-2.5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 9h8M8 12h5M8 15h7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+      <div class="brand-copy"><div class="brand-name">Codeboard</div><div class="brand-sub">Coding whiteboard</div></div>
+    </div>
+    <div class="board-title-wrap"><input id="boardTitle" class="title-input" aria-label="Board title" value="Untitled board" maxlength="48"></div>
+    <div class="save-state"><span class="save-dot"></span><span id="saveStatus">Saved locally</span></div>
+    <div class="top-spacer"></div>
+    <div class="top-actions">
+      <button class="icon-button" id="undoButton" title="Undo (Ctrl/Cmd+Z)" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h9a7 7 0 0 1 0 14h-1"/></svg></button>
+      <button class="icon-button" id="redoButton" title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9h-9a7 7 0 0 0 0 14h1"/></svg></button>
+      <div class="top-divider"></div>
+      <button class="icon-button" id="importButton" title="Import a Codeboard file" aria-label="Import board"><svg viewBox="0 0 24 24"><path d="M12 15V3m0 0L7.5 7.5M12 3l4.5 4.5"/><path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg></button>
+      <input id="importFile" type="file" accept="application/json,.json" hidden>
+      <div class="export-wrap">
+        <button class="small-button primary-button" id="exportButton"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 17v3h14v-3"/></svg><span>Export</span></button>
+        <div id="exportMenu" class="export-menu" hidden>
+          <button data-export="png">Download as PNG</button>
+          <button data-export="svg">Download as SVG</button>
+          <button data-export="json">Download editable board</button>
+        </div>
+      </div>
+      <button class="icon-button" id="fullscreenButton" title="Full screen" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M8 4H4v4M16 4h4v4M4 16v4h4m12-4v4h-4"/></svg></button>
+      <button class="icon-button" id="clearButton" title="Clear board" aria-label="Clear board"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <nav class="left-rail" aria-label="Whiteboard tools">
+      <button class="tool-button active" data-tool="select" title="Select and pan (V or H); Shift-drag empty space to select a group" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="m5 3 13 10-6 .8-3.3 6.2L5 3Z"/></svg><span class="tool-label">Select</span></button>
+      <button class="tool-button" data-tool="pen" title="Pen (P)" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m4 16.5 10.8-10.8a2.1 2.1 0 0 1 3 3L7 19.5 3.5 20.5z"/><path d="m13.5 7.5 3 3"/></svg><span class="tool-label">Pen</span></button>
+      <button class="tool-button" data-tool="erase" title="Erase (E); drag across objects to delete them. Ctrl/Cmd+Z undoes the stroke." aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m14 3 7 7-10 10H7l-4-4L14 3Z"/><path d="m8 11 7 7M11 20h10"/></svg><span class="tool-label">Erase</span></button>
+      <button class="tool-button" data-tool="rect" title="Rectangle (R); drag on the board" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="1.5"/></svg><span class="tool-label">Box</span></button>
+      <button class="tool-button" data-tool="array" title="Insert an array or list" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="6" height="8" rx="1"/><rect x="9" y="6" width="6" height="8"/><rect x="15" y="6" width="6" height="8" rx="1"/><path d="M4 18h1m5 0h1m5 0h1"/></svg><span class="tool-label">Array</span></button>
+      <button class="tool-button" data-tool="linkedlist" title="Create a linked list" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="7" height="10"/><rect x="16" y="7" width="6" height="10"/><path d="M9 12h7m-3-3 3 3-3 3"/></svg><span class="tool-label">Linked List</span></button>
+      <button class="tool-button" data-tool="tree" title="Add a tree" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="4" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M12 6.5v5M5 16.5v-5h14v5"/></svg><span class="tool-label">Tree</span></button>
+      <button class="tool-button" data-tool="memory" title="Create a stack and heap diagram" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 3h7v18H3zM3 9h7M3 15h7M10 12h4l3-5"/><rect x="16" y="3" width="6" height="6"/><rect x="16" y="15" width="6" height="6"/></svg><span class="tool-label">Stack/Heap</span></button>
+      <button class="tool-button" data-tool="code" title="Add a code block" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5m-3-13-2 16"/></svg><span class="tool-label">Code</span></button>
+      <button class="tool-button" data-tool="text" title="Add a text note" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 6V4h16v2M12 4v16m-4 0h8"/></svg><span class="tool-label">Text</span></button>
+      <button class="tool-button" data-tool="arrow" title="Arrow connector (A); drag to draw" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 18 19 5m-7 0h7v7"/></svg><span class="tool-label">Arrow</span></button>
+      <div class="rail-divider"></div>
+      <div class="color-picker-wrap"><input id="strokeColor" class="color-input" type="color" value="#3968e8" aria-label="Drawing color"><span>Color</span></div>
+    </nav>
+
+    <section class="canvas-stage" aria-label="Whiteboard canvas">
+      <div class="canvas-frame" id="canvasFrame">
+        <svg id="boardSvg" data-tool="select" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive whiteboard">
+          <defs>
+            <pattern id="dotGrid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1.3" cy="1.3" r="1.1" fill="#dce3ed"/></pattern>
+            <marker id="arrowHead" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="strokeWidth"><path d="M0 0 9 4.5 0 9z" fill="#3968e8"/></marker>
+            <marker id="exportArrowHead" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="strokeWidth"><path d="M0 0 9 4.5 0 9z" fill="#3968e8"/></marker>
+          </defs>
+          <rect id="canvasBg" x="0" y="0" width="100%" height="100%" fill="#fcfdff"/>
+          <g id="world">
+            <rect x="-10000" y="-10000" width="20000" height="20000" fill="url(#dotGrid)" pointer-events="none"/>
+            <g id="objects"></g>
+            <g id="previewLayer" pointer-events="none"></g>
+          </g>
+        </svg>
+        <div id="placementHint" class="placement-hint" role="status" hidden><span>Click to place · Esc to cancel</span><button id="cancelPlacement">Cancel</button></div>
+        <section id="traversalPanel" class="traversal-panel" aria-label="Tree traversal" hidden>
+          <h3 id="traversalTitle">Tree traversal</h3>
+          <div class="traversal-options">
+            <label>Traversal<select id="traversalMode"><option value="preorder">Preorder</option><option id="traversalInorder" value="inorder">Inorder</option><option value="postorder">Postorder</option><option value="levelorder">Level order (BFS)</option></select></label>
+            <label>Speed<select id="traversalSpeed"><option value="1600">Slow</option><option value="800" selected>Normal</option><option value="350">Fast</option></select></label>
+          </div>
+          <p id="traversalHelp" class="traversal-help"></p>
+          <div class="traversal-buttons"><button id="traversalBack" aria-label="Previous traversal step">Back</button><button id="traversalPlay">Play</button><button id="traversalNext" aria-label="Next traversal step">Next</button><button id="traversalReset">Reset</button></div>
+          <p id="traversalStatus" class="traversal-status" role="status" aria-live="polite"></p>
+          <div id="traversalOutput" class="traversal-output" aria-label="Visited nodes in order"></div>
+          <p class="traversal-help">Orange: current · Green: visited</p>
+        </section>
+        <div id="emptyHint" class="empty-hint">
+          <div class="empty-card">
+            <div class="empty-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h5M8 16h7"/></svg></div>
+            <h2>Your coding whiteboard</h2>
+            <p>Drag empty space to pan. Click an object to select it, then drag to move or resize it. Use Erase to remove objects along your drag path.</p>
+            <div class="empty-shortcuts"><kbd>V</kbd> select &nbsp; <kbd>P</kbd> pen &nbsp; <kbd>R</kbd> box &nbsp; <kbd>Del</kbd> remove</div>
+          </div>
+        </div>
+      </div>
+      <div class="zoom-controls" aria-label="Zoom controls">
+        <button id="zoomOut" title="Zoom out" aria-label="Zoom out">−</button><span id="zoomValue" class="zoom-value">100%</span><button id="zoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+        <button id="fitBoard" title="Reset view" aria-label="Reset view" style="font-size:13px;border-left:1px solid #edf0f4">↗</button>
+      </div>
+      <div class="canvas-tip">E to erase · Ctrl/Cmd+Z to undo · Shift-drag to select</div>
+    </section>
+
+    <aside class="inspector">
+      <div class="panel-head"><h2>Board details</h2><p>Click an object to select it. Shift-drag empty space to select a group; Shift-click to add or remove items.</p></div>
+      <div class="inspector-content">
+        <div class="section-label">Selection</div>
+        <div id="selectionInfo" class="selection-empty">Nothing selected. Draw, insert, or select an object to see its details here.</div>
+        <details class="shortcuts-section" open>
+          <summary>Keyboard shortcuts</summary>
+          <p class="shortcuts-help">Use Ctrl on Windows/Linux or ⌘ on Mac. Board shortcuts apply when you’re not typing.</p>
+          <dl class="shortcut-list">
+            <div><dt>Select / pan</dt><dd><kbd>V</kbd> / <kbd>H</kbd></dd></div>
+            <div><dt>Pen</dt><dd><kbd>P</kbd></dd></div>
+            <div><dt>Eraser</dt><dd><kbd>E</kbd></dd></div>
+            <div><dt>Rectangle</dt><dd><kbd>R</kbd></dd></div>
+            <div><dt>Arrow</dt><dd><kbd>A</kbd></dd></div>
+            <div><dt>Pan temporarily</dt><dd><kbd>Space</kbd> + drag</dd></div>
+            <div><dt>Undo</dt><dd><kbd>Ctrl/⌘ + Z</kbd></dd></div>
+            <div><dt>Redo</dt><dd><kbd>Ctrl/⌘ + Shift + Z</kbd></dd></div>
+            <div><dt>Redo (alternate)</dt><dd><kbd>Ctrl/⌘ + Y</kbd></dd></div>
+            <div><dt>Select all</dt><dd><kbd>Ctrl/⌘ + A</kbd></dd></div>
+            <div><dt>Delete selected</dt><dd><kbd>Del</kbd> / <kbd>Backspace</kbd></dd></div>
+            <div><dt>Move 1 px</dt><dd><kbd>↑ ↓ ← →</kbd></dd></div>
+            <div><dt>Move 10 px</dt><dd><kbd>Shift + ↑ ↓ ← →</kbd></dd></div>
+            <div><dt>Cancel / deselect</dt><dd><kbd>Esc</kbd></dd></div>
+            <div><dt>Select an area</dt><dd><kbd>Shift</kbd> + drag</dd></div>
+            <div><dt>Toggle selection</dt><dd><kbd>Shift</kbd> + click</dd></div>
+          </dl>
+          <p class="shortcuts-help">In editors: Tab indents code or an indented tree. Enter submits an array or arrow name. Ctrl/⌘ + Enter submits text, a tree, a linked list, or a stack/heap diagram.</p>
+        </details>
+        <div class="layer-section">
+          <div class="section-label">Layers <span id="layerCount" style="font-weight:500;letter-spacing:0;text-transform:none"></span></div>
+          <div id="layers" class="layers"><div class="layer-empty">Your board is empty.</div></div>
+        </div>
+      </div>
+      <div class="quickstart"><div class="quickstart-title">Need a starting point?</div><button id="demoButton">Load a small array loop example →</button></div>
+    </aside>
+  </main>
+</div>
+
+<div id="modalBackdrop" class="modal-backdrop" hidden>
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header"><div><h2 id="modalTitle">Insert object</h2><p id="modalDescription"></p></div><button id="modalClose" class="modal-close" aria-label="Close">×</button></div>
+    <div class="modal-body">
+      <div id="arrayPanel" hidden><label class="field-label" for="arrayNameInput">Array name</label><input id="arrayNameInput" class="modal-input" placeholder="arr" maxlength="48" autocomplete="off" style="margin-bottom:14px"><label class="field-label" for="arrayInput">Numbers, separated by commas or spaces</label><input id="arrayInput" class="modal-input" placeholder="4, 7, 2, 9" autocomplete="off"><div class="field-help">The name appears above the array and moves with it. Up to 30 values.</div></div>
+      <div id="codePanel" hidden><label class="field-label" for="codeLanguage">Language</label><select id="codeLanguage" class="modal-input" style="margin-bottom:14px"><option value="javascript">JavaScript</option><option value="python">Python</option></select><label class="field-label" for="codeInput">Code block</label><textarea id="codeInput" class="code-editor" spellcheck="false"></textarea><div id="codeHelp" class="field-help"></div></div>
+      <div id="textPanel" hidden><label class="field-label" for="textInput">Text note</label><textarea id="textInput" class="modal-input" rows="4" placeholder="Write a short explanation…" style="resize:vertical"></textarea><div class="field-help">Use this for labels, questions, or quick explanations.</div></div>
+      <div id="arrowPanel" hidden><label class="field-label" for="arrowNameInput">Arrow name</label><input id="arrowNameInput" class="modal-input" placeholder="e.g. next, current, points to" maxlength="48" autocomplete="off"><div class="field-help">The name appears beside the arrow and moves with it. Leave it blank to remove the label.</div></div>
+      <div id="linkedlistPanel" hidden>
+        <label class="field-label" for="linkedlistNameInput">List name</label><input id="linkedlistNameInput" class="modal-input" maxlength="48" style="margin-bottom:14px">
+        <label class="field-label" for="linkedlistKind">List type</label><select id="linkedlistKind" class="modal-input" style="margin-bottom:14px"><option value="singly">Singly linked</option><option value="doubly">Doubly linked</option><option value="circular">Circular (singly linked)</option></select>
+        <label class="field-label" for="linkedlistInput">Node values, in order</label><textarea id="linkedlistInput" class="modal-input" rows="3" spellcheck="false" aria-describedby="linkedlistHelp" style="resize:vertical;font-family:ui-monospace,monospace"></textarea>
+        <div id="linkedlistHelp" class="field-help">Enter <strong>10, 20, 30</strong> or a JSON array such as <strong>["A", "B", "C"]</strong>. Boxes, head/tail labels, next/prev arrows, and null ends are drawn automatically. Circular lists connect the tail back to the head. Use <strong>[]</strong> for an empty list. Up to 20 nodes, with 32 characters per value. Ctrl/⌘ + Enter submits.</div>
+        <div id="linkedlistError" class="field-help" role="alert" style="color:#b33d49" hidden></div>
+      </div>
+      <div id="memoryPanel" hidden>
+        <label class="field-label" for="memoryNameInput">Diagram name</label><input id="memoryNameInput" class="modal-input" maxlength="48" style="margin-bottom:12px">
+        <label class="field-label" for="memoryExample">Start from an example</label><select id="memoryExample" class="modal-input" style="margin-bottom:14px"><option value="">Choose an example…</option value="shared">Shared array</option><option value="linked">Linked nodes</option><option value="calls">Function call frames</option></select>
+        <div class="memory-editors">
+          <div><label class="field-label" for="memoryStackInput">Stack · variables and frames</label><textarea id="memoryStackInput" class="modal-input" rows="8" spellcheck="false" aria-describedby="memoryHelp"></textarea></div>
+          <div><label class="field-label" for="memoryHeapInput">Heap · named objects</label><textarea id="memoryHeapInput" class="modal-input" rows="8" spellcheck="false" aria-describedby="memoryHelp"></textarea></div>
+        </div>
+        <div class="field-help">Add <strong>return = 13</strong> inside a stack frame for a highlighted return-value box. Use <strong>return = @numbers</strong> to return a reference.</div>
+        <div id="memoryHelp" class="field-help">One assignment per line: <strong>count = 3</strong> or <strong>items = @numbers</strong>. Add a frame with <strong>[main]</strong>. On the heap, use JSON: <strong>numbers = [1, 2, 3]</strong> or <strong>node = {"value": 1, "next": "@other"}</strong>. Every @name draws an arrow to that heap object. Quote strings; use null for no reference. Put nested objects on separate lines and connect them with @name. Frame order is top to bottom as entered. This is a diagram you describe, not a live view of program memory.</div>
+        <div id="memoryError" class="field-help" role="alert" style="color:#b33d49" hidden></div>
+      </div>
+      <div id="treePanel" hidden>
+        <label class="field-label" for="treeNameInput">Tree name</label><input id="treeNameInput" class="modal-input" placeholder="tree" maxlength="48" autocomplete="off" style="margin-bottom:14px">
+        <label class="field-label" for="treeFormat">Input format</label><select id="treeFormat" class="modal-input" style="margin-bottom:14px"><option value="binary">Binary tree · level order</option><option value="indented">General tree · indented text</option></select>
+        <label class="field-label" for="treeInput">Nodes</label><textarea id="treeInput" class="modal-input" rows="7" spellcheck="false" style="resize:vertical;font-family:ui-monospace,monospace;tab-size:2"></textarea>
+        <div id="treeHelp" class="field-help"></div><div id="treeError" class="field-help" role="alert" style="color:#b33d49" hidden></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button id="modalCancel">Cancel</button><button id="modalSubmit" class="modal-submit">Add to board</button></div>
+  </section>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  const STORE_KEY = 'codeboard-whiteboard-v1';
+  const svg = document.getElementById('boardSvg');
+  const world = document.getElementById('world');
+  const objectsLayer = document.getElementById('objects');
+  const previewLayer = document.getElementById('previewLayer');
+  const frame = document.getElementById('canvasFrame');
+  const titleInput = document.getElementById('boardTitle');
+  const selectionInfo = document.getElementById('selectionInfo');
+  const layers = document.getElementById('layers');
+  const emptyHint = document.getElementById('emptyHint');
+  const saveStatus = document.getElementById('saveStatus');
+  const colorInput = document.getElementById('strokeColor');
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const arrayInput = document.getElementById('arrayInput');
+  const arrayNameInput = document.getElementById('arrayNameInput');
+  const arrowNameInput = document.getElementById('arrowNameInput');
+  const treeNameInput = document.getElementById('treeNameInput');
+  const treeFormat = document.getElementById('treeFormat');
+  const treeInput = document.getElementById('treeInput');
+  const memoryStackInput = document.getElementById('memoryStackInput');
+  const memoryHeapInput = document.getElementById('memoryHeapInput');
+  const memoryNameInput = document.getElementById('memoryNameInput');
+  const linkedlistInput = document.getElementById('linkedlistInput');
+  const linkedlistNameInput = document.getElementById('linkedlistNameInput');
+  const linkedlistKind = document.getElementById('linkedlistKind');
+  const codeInput = document.getElementById('codeInput');
+  const codeLanguage = document.getElementById('codeLanguage');
+  const textInput = document.getElementById('textInput');
+  const exportMenu = document.getElementById('exportMenu');
+  const NS = 'http://www.w3.org/2000/svg';
+  const defaultState = { title: 'Untitled board', objects: [], view: { x: 0, y: 0, zoom: 1 } };
+  let state = readSavedState();
+  let selectedIds = new Set();
+  let pendingObject = null;
+  let activeTool = 'select';
+  let pointerAction = null;
+  let modalMode = null;
+  let modalEditId = null;
+  let history = [];
+  let historyIndex = -1;
+  let saveTimer = 0;
+  let toastTimer = 0;
+  let spaceHeld = false;
+  const codeRuns = new Map();
+  let traversal = null;
+  let traversalTimer = 0;
+  const PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v314.0.7/full/';
+  const CODE_SAMPLES = {
+    javascript: 'const numbers = [4, 7, 2, 9];\nfor (let i = 0; i < numbers.length; i++) {\n    console.log(numbers[i]);\n}',
+    python: 'numbers = [4, 7, 2, 9]\nfor number in numbers:\n    print(number)'
+  };
+  function languageOf(obj) { return obj.language === 'python' ? 'python' : 'javascript'; }
+  function updateCodeHelp() {
+    document.getElementById('codeHelp').textContent = codeLanguage.value === 'python'
+      ? 'Python: use print() for output. Tab and Enter after : indent by four spaces. The first run downloads the Python runtime (internet required). Execution has a 3-second limit after loading. Interactive input() is not supported.'
+      : 'JavaScript: console.log() and return values appear below the block. Use await for asynchronous work. Tab indents by four spaces. Each run has a 3-second limit and no access to the page DOM.';
+  }
+  const MONO_STYLE = 'white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+
+  function readSavedState() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return structuredClone(defaultState);
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed.objects)) return structuredClone(defaultState);
+      return { ...defaultState, ...parsed, view: { ...defaultState.view, ...(parsed.view || {}) } };
+    } catch { return structuredClone(defaultState); }
+  }
+  function clone(value) { return JSON.parse(JSON.stringify(value)); }
+  function newId() { return globalThis.crypto?.randomUUID?.() || `obj-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+  function el(name, attrs = {}, parent = null) {
+    const node = document.createElementNS(NS, name);
+    for (const [key, value] of Object.entries(attrs)) {
+      if (value !== undefined && value !== null) node.setAttribute(key, String(value));
+    }
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  function svgText(parent, x, y, text, attrs = {}) {
+    const node = el('text', { x, y, ...attrs }, parent);
+    node.textContent = text;
+    return node;
+  }
+  function getObject(id) { return state.objects.find(obj => obj.id === id); }
+  function currentColor() { return colorInput.value || '#3968e8'; }
+  function parseLinkedList(source, kind) {
+    if (!['singly', 'doubly', 'circular'].includes(kind)) throw new Error('Choose a supported list type.');
+    if (source.length > 4000) throw new Error('Use up to 20 nodes, with 32 characters per value.');
+    const raw = source.trim(); let values;
+    if (!raw) throw new Error('Enter node values, or [] for an empty list.');
+    if (raw.startsWith('[')) {
+      try { values = JSON.parse(raw); }
+      catch { throw new Error('Use a valid JSON array, for example [10, 20, 30] or ["A", "B"].'); }
+    } else {
+      values = raw.split(',').map(part => {
+        const value = part.trim();
+        if (!value) throw new Error('A node is missing a value. Remove extra commas or use "" for an empty string.');
+        try { return JSON.parse(value); } catch { return value; }
+      });
+    }
+    if (!Array.isArray(values) || values.length > 20) throw new Error('Use an array of up to 20 node values.');
+    for (const value of values) {
+      if (value !== null && !['string', 'number', 'boolean'].includes(typeof value)) throw new Error('Each node must contain text, a number, true/false, or null.');
+      if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('Use finite numbers for node values.');
+      if (Array.from(String(value)).length > 32 || /[\r\n\t]/.test(String(value))) throw new Error('Keep each value on one line, with at most 32 characters.');
+    }
+    return values;
+  }
+  function linkedListLayout(obj) {
+    const doubly = obj.listKind === 'doubly';
+    const dataWidth = Math.max(60, ...obj.values.map(value => memoryTextWidth(String(value)) * 1.2 + 24));
+    const nodeWidth = dataWidth + (doubly ? 68 : 34), startX = doubly ? 64 : 16;
+    const positions = obj.values.map((value, index) => ({ x: startX + index * (nodeWidth + 68), y: 70 }));
+    const end = positions.length ? positions.at(-1).x + nodeWidth : 150;
+    return { dataWidth, nodeWidth, positions, end, w: Math.max(end + 100, memoryTextWidth(`${obj.label || 'list'} · doubly linked`) + 24), h: obj.listKind === 'circular' && positions.length ? 220 : 190 };
+  }
+  function renderLinkedList(obj, g) {
+    const layout = linkedListLayout(obj), color = obj.color || '#3968e8', doubly = obj.listKind === 'doubly';
+    svgText(g, 0, 14, `${obj.label || 'list'} · ${{ singly: 'singly linked', doubly: 'doubly linked', circular: 'circular' }[obj.listKind]}`, { 'font-size': 12, 'font-weight': 700, fill: '#596a84', style: MONO_STYLE });
+    function arrow(path, x, y, direction, backward = false) {
+      const stroke = backward ? '#33866e' : color;
+      el('path', { class: 'linkedlist-link', d: path, fill: 'none', stroke, 'stroke-width': 1.8, 'stroke-linejoin': 'round' }, g);
+      const points = direction === 'down' ? `${x},${y} ${x - 4},${y - 8} ${x + 4},${y - 8}` : `${x},${y} ${x + (direction === 'left' ? 8 : -8)},${y - 4} ${x + (direction === 'left' ? 8 : -8)},${y + 4}`;
+      el('polygon', { points, fill: stroke }, g);
+    }
+    if (!obj.values.length) {
+      svgText(g, 16, 90, 'head', { 'font-size': 12, fill: color, style: MONO_STYLE });
+      arrow('M 58 86 H 106', 106, 86, 'right');
+      svgText(g, 116, 90, 'null', { 'font-size': 13, fill: '#8490a1', style: MONO_STYLE });
+    }
+    layout.positions.forEach(({ x, y }, index) => {
+      const dataX = x + (doubly ? 34 : 0), nextX = x + layout.nodeWidth - 34;
+      el('rect', { class: 'linkedlist-node', x, y, width: layout.nodeWidth, height: 60, fill: '#fff', stroke: color, 'stroke-width': 1.5 }, g);
+      el('rect', { x: nextX, y: y + 1, width: 33, height: 58, fill: '#edf2ff' }, g);
+      el('line', { x1: nextX, y1: y, x2: nextX, y2: y + 60, stroke: color }, g);
+      svgText(g, nextX + 17, y + 13, 'next', { 'text-anchor': 'middle', 'font-size': 9, fill: '#596a84' });
+      if (doubly) {
+        el('rect', { x: x + 1, y: y + 1, width: 33, height: 58, fill: '#e7f5ef' }, g);
+        el('line', { x1: dataX, y1: y, x2: dataX, y2: y + 60, stroke: color }, g);
+        svgText(g, x + 17, y + 13, 'prev', { 'text-anchor': 'middle', 'font-size': 9, fill: '#287b65' });
+      }
+      svgText(g, dataX + layout.dataWidth / 2, y + 35, obj.values[index] === '' ? '""' : String(obj.values[index]), { 'text-anchor': 'middle', 'font-size': 14, fill: '#21334d', style: MONO_STYLE });
+      const nextStart = nextX + 17, nextY = y + (doubly ? 24 : 32);
+      el('circle', { cx: nextStart, cy: nextY, r: 2.5, fill: color }, g);
+      if (index < obj.values.length - 1) arrow(`M ${nextStart} ${nextY} H ${layout.positions[index + 1].x}`, layout.positions[index + 1].x, nextY, 'right');
+      else if (obj.listKind === 'circular') {
+        const first = layout.positions[0].x;
+        arrow(`M ${nextStart} ${nextY} H ${layout.end + 38} V 172 H 4 V ${nextY} H ${first}`, first, nextY, 'right');
+      } else {
+        arrow(`M ${nextStart} ${nextY} H ${layout.end + 48}`, layout.end + 48, nextY, 'right');
+        svgText(g, layout.end + 56, nextY + 4, 'null', { 'font-size': 12, fill: '#8490a1', style: MONO_STYLE });
+      }
+      if (doubly) {
+        const prevY = y + 46, end = index ? layout.positions[index - 1].x + layout.nodeWidth : 38;
+        el('circle', { cx: x + 17, cy: prevY, r: 2.5, fill: '#33866e' }, g);
+        arrow(`M ${x + 17} ${prevY} H ${end}`, end, prevY, 'left', true);
+        if (!index) svgText(g, 0, prevY + 4, 'null', { 'font-size': 12, fill: '#8490a1', style: MONO_STYLE });
+      }
+      const center = x + layout.nodeWidth / 2;
+      if (index === 0) {
+        svgText(g, center, 40, 'head', { 'text-anchor': 'middle', 'font-size': 12, fill: color, style: MONO_STYLE });
+        arrow(`M ${center} 46 V 70`, center, 70, 'down');
+      }
+      if (index === obj.values.length - 1) svgText(g, center, 152, 'tail', { 'text-anchor': 'middle', 'font-size': 12, fill: '#596a84', style: MONO_STYLE });
+    });
+    const edit = el('g', { class: 'linkedlist-controls', 'data-object-edit': 'linkedlist', role: 'button', tabindex: 0, 'aria-label': 'Edit linked list', style: 'cursor: pointer' }, g);
+    el('rect', { x: 0, y: layout.h - 24, width: 64, height: 23, rx: 5, fill: '#edf2ff', stroke: '#cbd8fa' }, edit);
+    svgText(edit, 32, layout.h - 8, 'Edit list', { 'text-anchor': 'middle', fill: '#355dcc', 'font-size': 11, 'pointer-events': 'none' });
+  }
+  const MEMORY_SAMPLES = {
+    shared: { label: 'Shared array', stackSource: '[main]\nitems = @numbers\nalias = @numbers\ncount = 3', heapSource: 'numbers = [4, 7, 2]' },
+    linked: { label: 'Linked nodes', stackSource: '[main]\nhead = @first\ncurrent = @second', heapSource: 'first = {"value": 10, "next": "@second"}\nsecond = {"value": 20, "next": "@third"}\nthird = {"value": 30, "next": null}' },
+    calls: { label: 'Function call', stackSource: '[sum · current call]\nvalues = @numbers\ni = 3\ntotal = 13\nreturn = 13\n[main · caller]\nitems = @numbers', heapSource: 'numbers = [4, 7, 2]' }
+  };
+  function memoryValue(value) {
+    if (typeof value === 'string' && value.startsWith('@')) return { ref: value.slice(1), text: value };
+    return { text: JSON.stringify(value) };
+  }
+  function parseMemory(stackSource, heapSource) {
+    if (stackSource.length + heapSource.length > 16000) throw new Error('Keep the diagram under 16,000 characters.');
+    const frames = [], heap = [], references = [];
+    const identifier = /^[A-Za-z_$][\w$-]{0,31}$/;
+    function scalar(value, location) {
+      if (value !== null && !['string', 'number', 'boolean'].includes(typeof value)) throw new Error(`${location}: put nested objects on their own heap line and use @name to reference them.`);
+      if (typeof value === 'number' && !Number.isFinite(value)) throw new Error(`${location}: use a finite number.`);
+      const cell = memoryValue(value);
+      if (Array.from(cell.text).length > 80) throw new Error(`${location}: keep each value under 80 characters.`);
+      if (cell.ref !== undefined) {
+        if (!identifier.test(cell.ref)) throw new Error(`${location}: use @ followed by a heap name, for example @numbers.`);
+        references.push({ name: cell.ref, location });
+      }
+      return cell;
+    }
+    function assignment(line, location) {
+      const match = line.match(/^([A-Za-z_$][\w$-]{0,31})\s*=\s*(.+)$/);
+      if (!match) throw new Error(`${location}: use name = value (names up to 32 characters).`);
+      let value;
+      try { value = match[2].startsWith('@') ? match[2] : JSON.parse(match[2]); }
+      catch { throw new Error(`${location}: use valid JSON, such as 3, "hello", null, or [1, 2].`); }
+      return { name: match[1], value };
+    }
+    let frame = null, variables = 0;
+    stackSource.split('\n').forEach((raw, i) => {
+      const line = raw.trim(); if (!line) return;
+      const location = `Stack line ${i + 1}`;
+      if (line.startsWith('[') && line.endsWith(']')) {
+        const name = line.slice(1, -1).trim();
+        if (!name || Array.from(name).length > 40) throw new Error(`${location}: use a frame name of 1–40 characters.`);
+        frame = { name, rows: [] }; frames.push(frame);
+      } else {
+        if (!frame) { frame = { name: 'main', rows: [] }; frames.push(frame); }
+        const { name, value } = assignment(line, location);
+        if (frame.rows.some(row => row.name === name)) throw new Error(`${location}: ${name} already exists in this frame.`);
+        frame.rows.push({ name, ...scalar(value, location) }); variables++;
+      }
+    });
+    heapSource.split('\n').forEach((raw, i) => {
+      const line = raw.trim(); if (!line) return;
+      const location = `Heap line ${i + 1}`, { name, value } = assignment(line, location);
+      if (heap.some(obj => obj.name === name)) throw new Error(`${location}: heap name ${name} is already used.`);
+      const type = Array.isArray(value) ? 'Array' : value !== null && typeof value === 'object' ? 'Object' : 'Value';
+      const entries = type === 'Array' ? value.map((item, index) => [`[${index}]`, item]) : type === 'Object' ? Object.entries(value) : [['value', value]];
+      if (entries.length > 20) throw new Error(`${location}: use at most 20 fields or array elements per object.`);
+      const rows = entries.map(([key, item]) => {
+        if (Array.from(key).length > 32 || /[\r\n\t]/.test(key)) throw new Error(`${location}: field names must fit on one line (up to 32 characters).`);
+        return { name: key, ...scalar(item, location) };
+      });
+      heap.push({ name, type, rows });
+    });
+    if (!frames.length && !heap.length) throw new Error('Enter a stack variable or heap object, or choose an example.');
+    if (frames.length > 6 || variables > 24 || heap.length > 12) throw new Error('Use at most 6 frames, 24 stack variables, and 12 heap objects.');
+    for (const reference of references) if (!heap.some(obj => obj.name === reference.name)) throw new Error(`${reference.location}: @${reference.name} has no heap object. Add ${reference.name} = … on the heap.`);
+    return { frames, heap };
+  }
+  function memoryTextWidth(text) {
+    return Array.from(text).reduce((width, char) => width + (char.charCodeAt(0) > 127 ? 13 : 7.5), 0);
+  }
+  function memoryLayout(obj) {
+    const { heap } = obj.memory;
+    // Keep the return slot at the bottom of its frame, separate from local variables.
+    const frames = obj.memory.frames.map(frame => ({ ...frame, rows: [
+      ...frame.rows.filter(row => row.name !== 'return'),
+      ...frame.rows.filter(row => row.name === 'return').map(row => ({ ...row, name: 'Return value', isReturn: true }))
+    ] }));
+    const columnWidth = blocks => Math.max(230, ...blocks.map(block => Math.max(memoryTextWidth(block.name) + 110, Math.max(48, ...block.rows.map(row => memoryTextWidth(row.name))) + Math.max(0, ...block.rows.map(row => memoryTextWidth(row.text))) + 48)));
+    const stackWidth = columnWidth(frames), heapWidth = columnWidth(heap), heapX = stackWidth + 180;
+    function place(blocks, x, width) {
+      let y = 58;
+      return blocks.map(block => { const box = { ...block, x, y, w: width, h: 34 + Math.max(1, block.rows.length) * 30 }; y += box.h + 26; return box; });
+    }
+    const stackBoxes = place(frames, 0, stackWidth), heapBoxes = place(heap, heapX, heapWidth);
+    const arrows = []; let lane = 0;
+    for (const box of [...stackBoxes, ...heapBoxes]) box.rows.forEach((row, index) => {
+      if (row.ref === undefined) return;
+      const target = heapBoxes.find(item => item.name === row.ref);
+      const from = { x: box.x + box.w, y: box.y + 49 + index * 30 };
+      const fromHeap = box.x === heapX;
+      const to = { x: fromHeap ? target.x + target.w : target.x, y: target.y + 17 };
+      let path;
+      if (fromHeap) {
+        const bend = heapX + heapWidth + 28 + (lane++) * 12;
+        path = `M ${from.x} ${from.y} H ${bend} V ${to.y} H ${to.x}`;
+      } else path = `M ${from.x} ${from.y} C ${from.x + 80} ${from.y}, ${to.x - 80} ${to.y}, ${to.x} ${to.y}`;
+      arrows.push({ from, to, fromHeap, path, isReturn: !!row.isReturn });
+    });
+    const bottom = Math.max(122, ...stackBoxes.map(box => box.y + box.h), ...heapBoxes.map(box => box.y + box.h));
+    return { stackBoxes, heapBoxes, heapX, stackWidth, heapWidth, arrows, w: Math.max(heapX + heapWidth + (lane ? 40 + lane * 12 : 0), memoryTextWidth(obj.label || 'Stack / Heap')), h: bottom + 58 };
+  }
+  function renderMemory(obj, g) {
+    const layout = memoryLayout(obj), color = obj.color || '#3968e8';
+    svgText(g, 0, 12, obj.label || 'Stack / Heap', { fill: '#46566e', 'font-size': 13, 'font-weight': 700, style: MONO_STYLE });
+    svgText(g, 0, 42, 'STACK · variables / call frames', { fill: '#4266b7', 'font-size': 12, 'font-weight': 700 });
+    svgText(g, layout.heapX, 42, 'HEAP · objects', { fill: '#287b65', 'font-size': 12, 'font-weight': 700 });
+    for (const [boxes, isHeap] of [[layout.stackBoxes, false], [layout.heapBoxes, true]]) {
+      if (!boxes.length) svgText(g, isHeap ? layout.heapX : 0, 84, isHeap ? 'No heap objects' : 'No stack variables', { fill: '#8490a1', 'font-size': 12 });
+      for (const box of boxes) {
+        el('rect', { class: 'memory-box', x: box.x, y: box.y, width: box.w, height: box.h, fill: '#fff', stroke: isHeap ? '#77b9a5' : '#9bafe1', 'stroke-width': 1.5 }, g);
+        el('rect', { x: box.x, y: box.y, width: box.w, height: 34, fill: isHeap ? '#e7f5ef' : '#edf2ff' }, g);
+        svgText(g, box.x + 12, box.y + 22, isHeap ? `@${box.name} · ${box.type}` : box.name, { 'font-size': 12, 'font-weight': 700, fill: '#344a68', style: MONO_STYLE });
+        const nameWidth = Math.max(48, ...box.rows.map(row => memoryTextWidth(row.name))) + 24;
+        if (!box.rows.length) svgText(g, box.x + 12, box.y + 54, isHeap ? '(empty)' : '(no local variables)', { 'font-size': 11, fill: '#8490a1' });
+        box.rows.forEach((row, index) => {
+          const y = box.y + 34 + index * 30;
+          if (row.isReturn) el('rect', { class: 'memory-return', x: box.x, y, width: box.w, height: 30, fill: '#fff0c2', stroke: '#cf941c', 'stroke-width': 1.5 }, g);
+          else el('line', { x1: box.x, y1: y, x2: box.x + box.w, y2: y, stroke: '#dfe6ef' }, g);
+          el('line', { x1: box.x + nameWidth, y1: y, x2: box.x + nameWidth, y2: y + 30, stroke: row.isReturn ? '#cf941c' : '#dfe6ef' }, g);
+          svgText(g, box.x + 12, y + 20, row.name, { 'font-size': 12, 'font-weight': row.isReturn ? 700 : 400, fill: row.isReturn ? '#805600' : '#596a84', style: MONO_STYLE });
+          svgText(g, box.x + nameWidth + 12, y + 20, row.text, { 'font-size': 12, 'font-weight': row.isReturn ? 700 : 400, fill: row.isReturn ? '#805600' : row.ref !== undefined ? color : '#21334d', style: MONO_STYLE });
+        });
+      }
+    }
+    layout.arrows.forEach(arrow => {
+      const arrowColor = arrow.isReturn ? '#b78016' : color;
+      el('path', { class: 'memory-reference', d: arrow.path, fill: 'none', stroke: arrowColor, 'stroke-width': 1.8, 'stroke-linejoin': 'round' }, g);
+      el('circle', { cx: arrow.from.x, cy: arrow.from.y, r: 3, fill: arrowColor }, g);
+      const back = arrow.to.x + (arrow.fromHeap ? 8 : -8);
+      el('polygon', { points: `${arrow.to.x},${arrow.to.y} ${back},${arrow.to.y - 4} ${back},${arrow.to.y + 4}`, fill: arrowColor }, g);
+    });
+    const edit = el('g', { class: 'memory-controls', 'data-object-edit': 'memory', role: 'button', tabindex: 0, 'aria-label': 'Edit stack and heap diagram', style: 'cursor: pointer' }, g);
+    el('rect', { x: 0, y: layout.h - 28, width: 90, height: 23, rx: 5, fill: '#edf2ff', stroke: '#cbd8fa' }, edit);
+    svgText(edit, 45, layout.h - 12, 'Edit diagram', { 'text-anchor': 'middle', fill: '#355dcc', 'font-size': 11, 'pointer-events': 'none' });
+  }
+  const TREE_SAMPLES = {
+    binary: '[8, 3, 10, 1, 6, null, 14]',
+    indented: 'Root\n  Left branch\n    Leaf A\n    Leaf B\n  Right branch\n    Leaf C'
+  };
+  function updateTreeHelp() {
+    document.getElementById('treeHelp').textContent = treeFormat.value === 'binary'
+      ? 'Enter values level by level, left to right. Use null for a missing child: [1, null, 2, 3]. String values need quotes inside brackets. Up to 63 nodes and 16 levels.'
+      : 'One node per line. Indent children by two spaces (or one Tab) per level. Start with one unindented root. Up to 63 nodes and 16 levels; 32 characters per value.';
+    document.getElementById('treeError').hidden = true;
+  }
+  function parseTree(source, format) {
+    if (!source.trim()) throw new Error('Enter at least one tree node.');
+    if (source.length > 10000) throw new Error('This tree input is too large. Use up to 63 nodes.');
+    const nodes = [], depths = [];
+    function addNode(value, parent, side) {
+      if (!['string', 'number', 'boolean'].includes(typeof value) || (typeof value === 'number' && !Number.isFinite(value))) throw new Error('Node values must be text, numbers, or booleans.');
+      const text = String(value).trim();
+      if (!text || Array.from(text).length > 32 || /[\r\n\t]/.test(text)) throw new Error('Each node needs a single-line value of 1–32 characters.');
+      if (nodes.length >= 63) throw new Error('Trees are limited to 63 nodes.');
+      const depth = parent === null ? 0 : depths[parent] + 1;
+      if (depth >= 16) throw new Error('Trees are limited to 16 levels.');
+      depths.push(depth); nodes.push({ value: text, parent, ...(side ? { side } : {}) });
+      return nodes.length - 1;
+    }
+    if (format === 'binary') {
+      let values;
+      if (source.trim().startsWith('[')) {
+        try { values = JSON.parse(source); } catch { throw new Error('Use a list such as [8, 3, 10, null, 6]. Put text values in double quotes.'); }
+      } else values = source.trim().split(/[\s,]+/).filter(Boolean).map(value => /^null$/i.test(value) ? null : value);
+      if (!Array.isArray(values) || !values.length || values[0] === null) throw new Error('A tree must start with a non-null root.');
+      addNode(values[0], null);
+      let cursor = 1;
+      for (let parent = 0; parent < nodes.length && cursor < values.length; parent++) {
+        for (const side of ['left', 'right']) {
+          if (cursor >= values.length) break;
+          const value = values[cursor++];
+          if (value !== null) addNode(value, parent, side);
+        }
+      }
+      if (values.slice(cursor).some(value => value !== null)) throw new Error('Some nodes have no parent. Remove extra values after the tree ends.');
+    } else if (format === 'indented') {
+      const stack = [];
+      for (const raw of source.trimEnd().split(/\r?\n/).filter(line => line.trim())) {
+        const line = raw.replace(/\t/g, '  '), spaces = line.match(/^ */)[0].length;
+        if (spaces % 2) throw new Error('Indent each level with two spaces or one Tab.');
+        const depth = spaces / 2;
+        if ((!nodes.length && depth !== 0) || (nodes.length && depth === 0)) throw new Error('Use exactly one unindented root. Indent every other node beneath it.');
+        if (depth > stack.length) throw new Error('A node cannot skip an indentation level.');
+        const parent = depth ? stack[depth - 1] : null;
+        const index = addNode(line.trim(), parent);
+        stack.length = depth; stack.push(index);
+      }
+    } else throw new Error('Choose a supported tree format.');
+    return nodes;
+  }
+  function treeLayout(obj) {
+    const nodes = obj.nodes;
+    const children = nodes.map(() => []);
+    nodes.forEach((node, index) => { if (node.parent !== null) children[node.parent].push(index); });
+    const nodeWidth = Math.max(48, ...nodes.map(node => Array.from(node.value).reduce((width, char) => width + (char.charCodeAt(0) > 127 ? 14 : 8), 24)));
+    const step = nodeWidth + 28, spans = [], slots = [];
+    function measure(index) {
+      if (!children[index].length) { slots[index] = []; return spans[index] = 1; }
+      slots[index] = obj.treeFormat === 'binary'
+        ? ['left', 'right'].map(side => children[index].find(child => nodes[child].side === side) ?? null)
+        : children[index];
+      return spans[index] = slots[index].reduce((width, child) => width + (child === null ? 1 : measure(child)), 0);
+    }
+    measure(0);
+    const positions = [], edges = []; let maxDepth = 0;
+    function place(index, start, depth) {
+      positions[index] = { x: (start + spans[index] / 2) * step, y: 52 + depth * 88 };
+      maxDepth = Math.max(maxDepth, depth);
+      let cursor = start;
+      for (const child of slots[index]) {
+        if (child !== null) { place(child, cursor, depth + 1); edges.push([index, child]); }
+        cursor += child === null ? 1 : spans[child];
+      }
+    }
+    place(0, 0, 0);
+    const labelWidth = Array.from(obj.label || 'tree').reduce((width, char) => width + (char.charCodeAt(0) > 127 ? 12 : 8), 28);
+    return { w: Math.max(spans[0] * step, labelWidth), h: 120 + maxDepth * 88, positions, edges, nodeWidth };
+  }
+  function traversalOrder(obj, mode) {
+    const children = obj.nodes.map(() => []);
+    obj.nodes.forEach((node, index) => { if (node.parent !== null) children[node.parent].push(index); });
+    if (mode === 'levelorder') {
+      const queue = [0];
+      for (let i = 0; i < queue.length; i++) queue.push(...children[queue[i]]);
+      return queue;
+    }
+    const order = [];
+    function visit(index) {
+      if (index === undefined) return;
+      if (mode === 'preorder') order.push(index);
+      if (mode === 'inorder') {
+        visit(children[index].find(child => obj.nodes[child].side === 'left'));
+        order.push(index);
+        visit(children[index].find(child => obj.nodes[child].side === 'right'));
+      } else children[index].forEach(visit);
+      if (mode === 'postorder') order.push(index);
+    }
+    visit(0);
+    return order;
+  }
+  function pauseTraversal() {
+    clearTimeout(traversalTimer); traversalTimer = 0;
+    if (traversal) traversal.playing = false;
+  }
+  function syncTraversal() {
+    const obj = selectedIds.size === 1 ? selectedObjects()[0] : null;
+    if (!obj || obj.type !== 'tree' || pendingObject) {
+      pauseTraversal(); traversal = null; return;
+    }
+    if (traversal?.obj === obj && traversal.nodes === obj.nodes) return;
+    const mode = traversal?.mode === 'inorder' && obj.treeFormat !== 'binary' ? 'preorder' : traversal?.mode || 'preorder';
+    const speed = traversal?.speed || 800;
+    pauseTraversal();
+    traversal = { obj, nodes: obj.nodes, mode, speed, order: traversalOrder(obj, mode), index: -1, playing: false };
+  }
+  function updateTraversalPanel() {
+    document.getElementById('traversalPanel').hidden = !traversal;
+    if (!traversal) return;
+    const { obj, mode, speed, order, index, playing } = traversal;
+    document.getElementById('traversalTitle').textContent = `${obj.label || 'Tree'} · Traversal`;
+    document.getElementById('traversalMode').value = mode;
+    document.getElementById('traversalSpeed').value = String(speed);
+    document.getElementById('traversalInorder').disabled = obj.treeFormat !== 'binary';
+    const help = { preorder: 'Visit the root, then each child subtree from left to right.', inorder: 'Visit the left subtree, root, then right subtree.', postorder: 'Visit each child subtree from left to right, then the root.', levelorder: 'Visit each level from left to right, starting at the root.' };
+    document.getElementById('traversalHelp').textContent = help[mode] + (obj.treeFormat !== 'binary' ? ' Inorder is available for binary trees.' : '');
+    document.getElementById('traversalBack').disabled = index < 0;
+    document.getElementById('traversalNext').disabled = index >= order.length - 1;
+    document.getElementById('traversalReset').disabled = index < 0 && !playing;
+    document.getElementById('traversalPlay').textContent = playing ? 'Pause' : index === order.length - 1 ? 'Replay' : 'Play';
+    document.getElementById('traversalStatus').textContent = index < 0 ? `Ready · ${order.length} nodes` : `Step ${index + 1} of ${order.length} · ${obj.nodes[order[index]].value}${index === order.length - 1 ? ' · Complete' : ''}`;
+    const output = document.getElementById('traversalOutput');
+    output.textContent = index < 0 ? 'Visit order will appear here.' : order.slice(0, index + 1).map(node => obj.nodes[node].value).join(' → ');
+    output.scrollTop = output.scrollHeight;
+  }
+  function scheduleTraversal() {
+    clearTimeout(traversalTimer);
+    const run = traversal;
+    if (!run?.playing) return;
+    traversalTimer = setTimeout(() => {
+      if (traversal !== run || !run.playing) return;
+      if (pointerAction || modalMode) { scheduleTraversal(); return; }
+      run.index++;
+      if (run.index >= run.order.length - 1) pauseTraversal();
+      render();
+      if (traversal === run && run.playing) scheduleTraversal();
+    }, run.speed);
+  }
+  function stepTraversal(delta) {
+    if (!traversal) return;
+    pauseTraversal();
+    traversal.index = Math.max(-1, Math.min(traversal.order.length - 1, traversal.index + delta));
+    render();
+  }
+  function objectTitle(obj) {
+    if (obj.type === 'array') return obj.label || 'Array';
+    if (obj.type === 'tree') return obj.label || 'Tree';
+    if (obj.type === 'memory') return obj.label || 'Stack / Heap';
+    if (obj.type === 'linkedlist') return obj.label || 'Linked list';
+    if (obj.type === 'code') return obj.label || 'Code block';
+    if (obj.type === 'rect') return 'Rectangle';
+    if (obj.type === 'stroke') return 'Pen stroke';
+    if (obj.type === 'arrow') return obj.label || 'Arrow';
+    if (obj.type === 'text') return (obj.text || 'Text note').split('\n')[0].slice(0, 24) || 'Text note';
+    return 'Object';
+  }
+  function baseBounds(obj) {
+    if (obj.type === 'tree') return treeLayout(obj);
+    if (obj.type === 'memory') return memoryLayout(obj);
+    if (obj.type === 'linkedlist') return linkedListLayout(obj);
+    if (obj.type === 'array') {
+      const labelWidth = Array.from(obj.label || 'arr').reduce((width, char) => width + (char.charCodeAt(0) > 127 ? 11 : 7.5), 0);
+      return { w: Math.max(Math.max(1, obj.values.length) * 58, labelWidth), h: 132 };
+    }
+    if (obj.type === 'rect') return { w: obj.w, h: obj.h };
+    if (obj.type === 'code') return codeLayout(obj);
+    if (obj.type === 'text') return { w: obj.w, h: obj.h };
+    if (obj.type === 'stroke') return { w: Math.max(4, obj.w), h: Math.max(4, obj.h) };
+    if (obj.type === 'arrow') {
+      const label = arrowLabelBounds(obj);
+      return { w: Math.max(4, obj.w, label ? label.x + label.w : 0), h: Math.max(4, obj.h, label ? label.y + label.h : 0) };
+    }
+    return { w: 1, h: 1 };
+  }
+  function arrowLabelBounds(obj) {
+    if (!obj.label) return null;
+    const width = Array.from(obj.label).reduce((w, char) => w + (char.charCodeAt(0) > 127 ? 12 : 7.5), 0);
+    return { x: (obj.x1 + obj.x2) / 2 + 14, y: (obj.y1 + obj.y2) / 2, w: width + 12, h: 24 };
+  }
+  function codeLines(code) {
+    return String(code || '').replace(/\r\n?/g, '\n').split('\n').map(line => {
+      let result = '';
+      for (const char of line) result += char === '\t' ? ' '.repeat(4 - result.length % 4) : char;
+      return result;
+    });
+  }
+  function codeLayout(obj) {
+    const lines = codeLines(obj.code);
+    const w = Math.max(obj.w || 260, 260, ...lines.map(line => line.length * 7.35 + 72));
+    const codeHeight = Math.max(obj.h || 0, 23 + lines.length * 22) + 32;
+    const output = codeRuns.get(obj.id) || obj.output;
+    const outputLines = [];
+    if (output) {
+      const columns = Math.max(20, Math.floor((w - 32) / 7.35));
+      const entries = output.lines.length ? output.lines : [output.status === 'loading' ? 'Loading Python… First run needs internet.' : output.status === 'running' ? 'Running…' : `No output. Use ${languageOf(obj) === 'python' ? 'print()' : 'console.log()'} to print a value.`];
+      for (const entry of entries) {
+        for (const line of codeLines(entry)) {
+          for (let i = 0; i < Math.max(1, line.length); i += columns) outputLines.push(line.slice(i, i + columns));
+        }
+      }
+      if (outputLines.length > 100) outputLines.splice(98, outputLines.length - 99, '… Output truncated');
+    }
+    return { w, h: codeHeight + (output ? 38 + outputLines.length * 20 : 0), lines, codeHeight, output, outputLines };
+  }
+  function objectScale(obj) { return Number.isFinite(obj.scale) && obj.scale > 0 ? obj.scale : 1; }
+  function bounds(obj) {
+    const b = baseBounds(obj), scale = objectScale(obj);
+    return { w: b.w * scale, h: b.h * scale };
+  }
+  function selectedObjects() { return state.objects.filter(obj => selectedIds.has(obj.id)); }
+  function selectObject(id, additive = false) {
+    if (!additive) selectedIds = new Set([id]);
+    else if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+  }
+  function renderObject(obj, showSelection = true) {
+    const outer = el('g', { class: `board-object object-${obj.type}`, 'data-id': obj.id, transform: `translate(${obj.x} ${obj.y})` });
+    const g = el('g', { transform: `scale(${objectScale(obj)})` }, outer);
+    const b = bounds(obj);
+    if (obj.type === 'array') {
+      svgText(g, 0, 12, obj.label || 'arr', { fill: '#596a84', 'font-size': 11, 'font-weight': 700, 'font-family': 'ui-monospace,monospace' });
+      obj.values.forEach((value, index) => {
+        const x = index * 58;
+        const highlighted = obj.highlightedIndex === index;
+        el('rect', { 'data-array-index': index, x, y: 23, width: 58, height: 52, rx: 0, fill: highlighted ? '#cbdcff' : '#fff', stroke: obj.color || '#7895e6', 'stroke-width': 1.5 }, g);
+        svgText(g, x + 29, 49, String(value), { 'data-array-index': index, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: highlighted ? '#244fc8' : '#21334d', 'font-size': 15, 'font-weight': 650, 'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+        svgText(g, x + 29, 93, String(index), { 'text-anchor': 'middle', fill: '#99a4b3', 'font-size': 10, 'font-family': 'ui-monospace,monospace' });
+      });
+      const edit = el('g', { class: 'array-controls', 'data-object-edit': 'array', role: 'button', tabindex: 0, 'aria-label': 'Edit array', style: 'cursor: pointer' }, g);
+      el('rect', { x: 0, y: 104, width: 48, height: 23, rx: 5, fill: '#edf2ff', stroke: '#cbd8fa' }, edit);
+      svgText(edit, 24, 120, 'Edit', { 'text-anchor': 'middle', fill: '#355dcc', 'font-size': 11, 'pointer-events': 'none' });
+    } else if (obj.type === 'linkedlist') {
+      renderLinkedList(obj, g);
+    } else if (obj.type === 'memory') {
+      renderMemory(obj, g);
+    } else if (obj.type === 'tree') {
+      const layout = treeLayout(obj), color = obj.color || '#3968e8';
+      const run = traversal?.obj === obj ? traversal : null;
+      const visited = new Set(run ? run.order.slice(0, run.index + 1) : []);
+      const current = run?.order[run.index];
+      svgText(g, 14, 12, obj.label || 'tree', { fill: '#596a84', 'font-size': 12, 'font-weight': 700, style: MONO_STYLE });
+      layout.edges.forEach(([parent, child]) => {
+        const from = layout.positions[parent], to = layout.positions[child];
+        const side = obj.treeFormat === 'binary'
+          ? (obj.nodes[child].side === 'left' ? -1 : 1)
+          : Math.sign(to.x - from.x);
+        // Attach to the lower rounded edge, keeping left and right branches separate.
+        const cornerOffset = 24 / Math.sqrt(2);
+        const startX = from.x + side * (layout.nodeWidth / 2 - 24 + cornerOffset);
+        const startY = from.y + (side ? cornerOffset : 24);
+        el('line', { class: 'tree-edge', x1: startX, y1: startY, x2: to.x, y2: to.y - 24, stroke: color, 'stroke-width': 2 }, g);
+      });
+      obj.nodes.forEach((node, index) => {
+        const { x, y } = layout.positions[index];
+        const isCurrent = index === current;
+        el('rect', { class: 'tree-node', x: x - layout.nodeWidth / 2, y: y - 24, width: layout.nodeWidth, height: 48, rx: 24, fill: isCurrent ? '#ffdfad' : visited.has(index) ? '#d5f3df' : index === 0 ? '#eaf1ff' : '#fff', stroke: isCurrent ? '#b85b00' : visited.has(index) ? '#26864b' : color, 'stroke-width': isCurrent ? 3.5 : 1.8 }, g);
+        svgText(g, x, y, node.value, { class: 'tree-value', 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: '#21334d', 'font-size': 14, 'font-weight': 600, style: MONO_STYLE });
+      });
+      const edit = el('g', { class: 'tree-controls', 'data-object-edit': 'tree', role: 'button', tabindex: 0, 'aria-label': 'Edit tree', style: 'cursor: pointer' }, g);
+      el('rect', { x: 14, y: layout.h - 28, width: 48, height: 23, rx: 5, fill: '#edf2ff', stroke: '#cbd8fa' }, edit);
+      svgText(edit, 38, layout.h - 12, 'Edit', { 'text-anchor': 'middle', fill: '#355dcc', 'font-size': 11, 'pointer-events': 'none' });
+    } else if (obj.type === 'rect') {
+      el('rect', { x: 0, y: 0, width: obj.w, height: obj.h, rx: 8, fill: obj.fill || '#f5f8ff', 'fill-opacity': obj.opacity ?? .74, stroke: obj.color || '#3968e8', 'stroke-width': 2 }, g);
+    } else if (obj.type === 'stroke') {
+      const d = obj.points.map((p, i) => `${i ? 'L' : 'M'} ${p[0]} ${p[1]}`).join(' ');
+      el('path', { d, fill: 'none', stroke: obj.color || '#3968e8', 'stroke-width': obj.size || 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'vector-effect': 'non-scaling-stroke' }, g);
+    } else if (obj.type === 'code') {
+      const layout = codeLayout(obj), { w, h, lines, codeHeight, output, outputLines } = layout;
+      el('rect', { x: 0, y: 0, width: w, height: h, rx: 9, fill: '#111d30', stroke: '#263550', 'stroke-width': 1.2 }, g);
+      el('rect', { x: 0, y: 32, width: 38, height: codeHeight - 32, fill: '#1a2940' }, g);
+      svgText(g, 14, 21, languageOf(obj) === 'python' ? 'Python' : 'JavaScript', { fill: '#9fb3d0', 'font-size': 11, style: MONO_STYLE });
+      lines.forEach((line, i) => {
+        const baseline = 56 + i * 22;
+        svgText(g, 18, baseline, String(i + 1), { 'text-anchor': 'middle', fill: '#677993', 'font-size': 10, style: MONO_STYLE });
+        svgText(g, 51, baseline, line || ' ', { class: 'code-line', fill: '#e4ebf6', 'font-size': 12, style: MONO_STYLE, 'xml:space': 'preserve' });
+      });
+      const running = ['loading', 'running'].includes(codeRuns.get(obj.id)?.status);
+      function codeButton(action, label, x, width, y = 5) {
+        const button = el('g', { class: 'code-controls', 'data-code-action': action, role: 'button', tabindex: 0, 'aria-label': `${label} code block`, style: 'cursor: pointer' }, g);
+        el('rect', { x, y, width, height: 23, rx: 5, fill: action === 'stop' ? '#8e3e46' : '#2c4e81' }, button);
+        svgText(button, x + width / 2, y + 15, label, { 'text-anchor': 'middle', fill: '#fff', 'font-size': 11, 'pointer-events': 'none' });
+      }
+      codeButton('edit', 'Edit', w - 132, 52);
+      codeButton(running ? 'stop' : 'run', running ? 'Stop' : '▶ Run', w - 72, 60);
+      if (output) {
+        el('line', { x1: 0, y1: codeHeight, x2: w, y2: codeHeight, stroke: '#34465f' }, g);
+        svgText(g, 14, codeHeight + 21, `Output · ${output.status}`, { fill: output.status === 'error' ? '#ff9c9c' : '#9fb3d0', 'font-size': 10, style: MONO_STYLE });
+        outputLines.forEach((line, i) => svgText(g, 14, codeHeight + 43 + i * 20, line || ' ', { class: 'code-output', fill: output.status === 'error' ? '#ffc1c1' : '#c9e6ce', 'font-size': 12, style: MONO_STYLE, 'xml:space': 'preserve' }));
+        if (!codeRuns.has(obj.id)) codeButton('clear', 'Clear', w - 64, 52, codeHeight + 5);
+      }
+    } else if (obj.type === 'arrow') {
+      el('line', { class: 'arrow-hit-target', x1: obj.x1, y1: obj.y1, x2: obj.x2, y2: obj.y2, stroke: 'transparent', 'stroke-width': 18, 'stroke-linecap': 'round', 'pointer-events': 'stroke', 'vector-effect': 'non-scaling-stroke' }, g);
+      el('line', { x1: obj.x1, y1: obj.y1, x2: obj.x2, y2: obj.y2, stroke: obj.color || '#3968e8', 'stroke-width': 2.5, 'stroke-linecap': 'round', 'marker-end': 'url(#arrowHead)', 'vector-effect': 'non-scaling-stroke' }, g);
+      const label = arrowLabelBounds(obj);
+      if (label) {
+        el('rect', { x: label.x, y: label.y, width: label.w, height: label.h, rx: 4, fill: '#fcfdff' }, g);
+        svgText(g, label.x + 6, label.y + 16, obj.label, { class: 'arrow-label', fill: obj.color || '#3968e8', 'font-size': 12, 'font-weight': 650, style: MONO_STYLE });
+      }
+      if (showSelection && selectedIds.size === 1 && selectedIds.has(obj.id)) {
+        const x = (obj.x1 + obj.x2) / 2 + 14, y = (obj.y1 + obj.y2) / 2 + (label ? 28 : 0);
+        const edit = el('g', { class: 'arrow-controls', 'data-object-edit': 'arrow', role: 'button', tabindex: 0, 'aria-label': 'Edit arrow name', style: 'cursor: pointer' }, g);
+        el('rect', { x, y, width: 48, height: 23, rx: 5, fill: '#edf2ff', stroke: '#cbd8fa' }, edit);
+        svgText(edit, x + 24, y + 16, label ? 'Edit' : 'Name', { 'text-anchor': 'middle', fill: '#355dcc', 'font-size': 11, 'pointer-events': 'none' });
+      }
+    } else if (obj.type === 'text') {
+      const lines = String(obj.text || '').split('\n');
+      lines.forEach((line, i) => svgText(g, 0, 17 + i * 24, line || ' ', { fill: obj.color || '#253650', 'font-size': 16, 'font-weight': 550, 'font-family': 'Inter,ui-sans-serif,system-ui,sans-serif' }));
+    }
+    if (showSelection && selectedIds.has(obj.id)) {
+      const zoom = state.view.zoom || 1, pad = 5 / zoom;
+      el('rect', { class: 'selection-outline', x: -pad, y: -pad, width: b.w + 2 * pad, height: b.h + 2 * pad, rx: 7 / zoom, fill: 'none', stroke: '#3968e8', 'stroke-width': 1.6 / zoom, 'stroke-dasharray': `${5 / zoom} ${4 / zoom}`, 'pointer-events': 'none', opacity: .92 }, outer);
+      if (selectedIds.size === 1) {
+        const anchors = [['nw',0,0],['ne',b.w,0],['sw',0,b.h],['se',b.w,b.h]];
+        anchors.forEach(([corner, cx, cy]) => {
+          const handle = el('rect', { class: 'selection-outline resize-handle', 'data-resize': corner, x: cx - 6 / zoom, y: cy - 6 / zoom, width: 12 / zoom, height: 12 / zoom, rx: 2 / zoom, fill: '#fff', stroke: '#3968e8', 'stroke-width': 1.5 / zoom, style: `cursor:${corner === 'nw' || corner === 'se' ? 'nwse' : 'nesw'}-resize` }, outer);
+          el('title', {}, handle).textContent = 'Drag to resize, including contents';
+        });
+      }
+    }
+    return outer;
+  }
+  function render() {
+    syncTraversal();
+    for (const [id, run] of codeRuns) {
+      if (getObject(id) !== run.obj || run.obj.code !== run.code || languageOf(run.obj) !== run.language) disposeCodeRun(id);
+    }
+    titleInput.value = state.title || 'Untitled board';
+    world.setAttribute('transform', `translate(${state.view.x || 0} ${state.view.y || 0}) scale(${state.view.zoom || 1})`);
+    objectsLayer.replaceChildren(...state.objects.map(obj => renderObject(obj)));
+    emptyHint.hidden = state.objects.length > 0 || !!pendingObject;
+    updateSelectionPanel();
+    updateLayers();
+    updateZoomLabel();
+    updateUndoButtons();
+    updateTraversalPanel();
+  }
+  function updateSelectionPanel() {
+    const selected = selectedObjects();
+    const obj = selected[0];
+    if (!obj) {
+      selectionInfo.className = 'selection-empty';
+      selectionInfo.textContent = 'Nothing selected. Draw, insert, or select an object to see its details here.';
+      return;
+    }
+    const b = bounds(obj);
+    selectionInfo.className = 'selection-card';
+    selectionInfo.replaceChildren();
+    const typeRow = document.createElement('div'); typeRow.className = 'selection-type';
+    const pill = document.createElement('span'); pill.className = 'type-pill'; pill.textContent = ({array:'[]',tree:'⑂',memory:'▤',linkedlist:'⇢',code:'</>',rect:'□',stroke:'✎',arrow:'↗',text:'T'})[obj.type] || '•';
+    const name = document.createElement('span'); name.textContent = selected.length > 1 ? `${selected.length} objects selected` : objectTitle(obj);
+    typeRow.append(pill, name);
+    const meta = document.createElement('div'); meta.className = 'selection-meta';
+    meta.textContent = `${Math.round(b.w)} × ${Math.round(b.h)} px · ${obj.type === 'array' ? `${obj.values.length} values` : obj.type === 'code' ? `${obj.code.split('\n').length} lines` : 'one object'}`;
+    if (obj.type === 'tree') meta.textContent = `${Math.round(b.w)} × ${Math.round(b.h)} px · ${obj.nodes.length} nodes`;
+    if (obj.type === 'memory') meta.textContent = `${obj.memory.frames.length} stack frames · ${obj.memory.heap.length} heap objects`;
+    if (obj.type === 'linkedlist') meta.textContent = `${obj.values.length} nodes · ${obj.listKind === 'circular' ? 'Circular' : obj.listKind === 'doubly' ? 'Doubly linked' : 'Singly linked'}`;
+    if (selected.length > 1) meta.textContent = 'Drag to move together. Delete removes the whole selection.';
+    else meta.textContent += ' · Drag a corner to resize';
+    const actions = document.createElement('div'); actions.className = 'selection-actions';
+    const duplicate = document.createElement('button'); duplicate.textContent = 'Duplicate'; duplicate.addEventListener('click', duplicateSelected);
+    const del = document.createElement('button'); del.className = 'delete-selected'; del.textContent = selected.length > 1 ? 'Delete all' : 'Delete'; del.addEventListener('click', deleteSelected);
+    if (selected.length === 1 && obj.type === 'code') {
+      const run = document.createElement('button'); run.textContent = codeRuns.has(obj.id) ? 'Stop' : 'Run';
+      run.addEventListener('click', () => codeRuns.has(obj.id) ? finishCodeRun(obj.id, 'stopped', 'Stopped.') : runCode(obj.id));
+      actions.append(run);
+    }
+    if (selected.length === 1 && ['array', 'arrow', 'tree', 'memory', 'linkedlist'].includes(obj.type)) {
+      const edit = document.createElement('button'); edit.textContent = 'Edit';
+      edit.addEventListener('click', () => startModal(obj.type, obj)); actions.append(edit);
+    }
+    actions.append(duplicate, del);
+    selectionInfo.append(typeRow, meta, actions);
+  }
+  function updateLayers() {
+    document.getElementById('layerCount').textContent = state.objects.length ? `· ${state.objects.length}` : '';
+    layers.replaceChildren();
+    if (!state.objects.length) {
+      const empty = document.createElement('div'); empty.className = 'layer-empty'; empty.textContent = 'Your board is empty.'; layers.appendChild(empty); return;
+    }
+    [...state.objects].reverse().forEach(obj => {
+      const row = document.createElement('div'); row.className = `layer-row${selectedIds.has(obj.id) ? ' selected' : ''}`; row.title = `Select ${objectTitle(obj)}`;
+      const icon = document.createElement('span'); icon.className = 'layer-icon'; icon.textContent = ({array:'[]',tree:'⑂',memory:'▤',linkedlist:'⇢',code:'<>',rect:'□',stroke:'✎',arrow:'↗',text:'T'})[obj.type] || '•';
+      const name = document.createElement('span'); name.className = 'layer-name'; name.textContent = objectTitle(obj);
+      row.append(icon, name); row.addEventListener('click', event => { setTool('select'); selectObject(obj.id, event.shiftKey); render(); }); layers.appendChild(row);
+    });
+  }
+  function updateZoomLabel() { document.getElementById('zoomValue').textContent = `${Math.round((state.view.zoom || 1) * 100)}%`; }
+  function updateUndoButtons() {
+    document.getElementById('undoButton').disabled = historyIndex <= 0;
+    document.getElementById('redoButton').disabled = historyIndex >= history.length - 1;
+  }
+  function queueSave() {
+    saveStatus.textContent = 'Saving…';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); saveStatus.textContent = 'Saved locally'; }
+      catch { saveStatus.textContent = 'Storage full'; toast('Could not save. Export the board to keep a copy.'); }
+    }, 140);
+  }
+  function recordHistory() {
+    const snapshot = JSON.stringify({ title: state.title, objects: state.objects, view: state.view });
+    if (history[historyIndex] === snapshot) { queueSave(); return; }
+    history = history.slice(0, historyIndex + 1);
+    history.push(snapshot);
+    if (history.length > 60) history.shift();
+    historyIndex = history.length - 1;
+    updateUndoButtons(); queueSave();
+  }
+  function restoreHistory(index) {
+    if (index < 0 || index >= history.length) return;
+    for (const id of codeRuns.keys()) disposeCodeRun(id);
+    setTool(activeTool === 'place' ? 'select' : activeTool);
+    historyIndex = index;
+    const next = JSON.parse(history[historyIndex]);
+    state.title = next.title; state.objects = next.objects; state.view = next.view; selectedIds.clear();
+    render(); queueSave();
+  }
+  function undo() {
+    if (pointerAction) { cancelAction(); queueSave(); return; }
+    if (codeRuns.size) { for (const id of codeRuns.keys()) disposeCodeRun(id); render(); return; }
+    if (pendingObject) { setTool('select'); render(); return; }
+    restoreHistory(historyIndex - 1);
+  }
+  function toast(message) {
+    const box = document.getElementById('toast'); box.textContent = message; box.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => box.classList.remove('show'), 2200);
+  }
+  function setTool(tool) {
+    cancelAction();
+    pendingObject = null;
+    previewLayer.replaceChildren();
+    document.getElementById('placementHint').hidden = true;
+    emptyHint.hidden = state.objects.length > 0;
+    activeTool = tool;
+    svg.dataset.tool = tool;
+    document.querySelectorAll('.tool-button').forEach(button => {
+      const active = button.dataset.tool === tool;
+      button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
+    });
+  }
+  function localPoint(event) {
+    const p = svg.createSVGPoint(); p.x = event.clientX; p.y = event.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  function worldPoint(event) {
+    const p = svg.createSVGPoint(); p.x = event.clientX; p.y = event.clientY;
+    return p.matrixTransform(world.getScreenCTM().inverse());
+  }
+  function visibleCenter() {
+    const rect = svg.getBoundingClientRect();
+    const p = svg.createSVGPoint(); p.x = rect.left + rect.width / 2; p.y = rect.top + rect.height / 2;
+    return p.matrixTransform(world.getScreenCTM().inverse());
+  }
+  function createCodeObject(code, label = 'Code block', language = 'javascript') {
+    const lines = code.split('\n');
+    const maxChars = Math.max(12, ...lines.map(line => line.length));
+    const w = Math.min(690, Math.max(260, maxChars * 7.35 + 72));
+    const h = 23 + lines.length * 22;
+    startPlacement({ id: newId(), type: 'code', x: 0, y: 0, w, h, code, label, language });
+  }
+  function addObject(obj) { state.objects.push(obj); selectedIds = new Set([obj.id]); render(); recordHistory(); }
+  function deleteSelected() {
+    if (!selectedIds.size || pendingObject) return;
+    state.objects = state.objects.filter(obj => !selectedIds.has(obj.id)); selectedIds.clear(); render(); recordHistory();
+  }
+  function duplicateSelected() {
+    const copies = selectedObjects().map(obj => ({ ...clone(obj), id: newId(), x: obj.x + 24, y: obj.y + 24 }));
+    if (!copies.length) return;
+    state.objects.push(...copies); selectedIds = new Set(copies.map(obj => obj.id)); render(); recordHistory();
+  }
+  function startPlacement(obj) {
+    setTool('place');
+    selectedIds.clear(); pendingObject = obj;
+    document.getElementById('placementHint').hidden = false;
+    render();
+  }
+  function showPlacement(event) {
+    const p = worldPoint(event);
+    pendingObject.x = p.x; pendingObject.y = p.y;
+    const preview = renderObject(pendingObject, false);
+    preview.setAttribute('opacity', '.65');
+    previewLayer.replaceChildren(preview);
+  }
+  function startModal(mode, obj = null) {
+    pauseTraversal(); updateTraversalPanel();
+    setTool('select');
+    modalMode = mode;
+    modalEditId = obj?.id || null;
+    document.getElementById('arrayPanel').hidden = mode !== 'array';
+    document.getElementById('codePanel').hidden = mode !== 'code';
+    document.getElementById('textPanel').hidden = mode !== 'text';
+    document.getElementById('arrowPanel').hidden = mode !== 'arrow';
+    document.getElementById('treePanel').hidden = mode !== 'tree';
+    document.getElementById('memoryPanel').hidden = mode !== 'memory';
+    document.getElementById('linkedlistPanel').hidden = mode !== 'linkedlist';
+    const heading = {linkedlist:['Create a linked list','Enter node values and choose a list type. Connections are drawn for you.'],memory:['Create a stack / heap diagram','Describe variables and objects. Codeboard draws the boxes and reference arrows for you.'],array:['Insert an array','Enter numbers and Codeboard will draw the values with their indexes.'],code:['Add a code block','Choose JavaScript or Python. Indentation is preserved on the board.'],text:['Add a text note','Place a short label or explanation on the board.'],arrow:['Name an arrow','Give this arrow a label to describe what it connects.'],tree:['Add a tree','Enter nodes, then choose where to place the tree.']}[mode];
+    document.getElementById('modalTitle').textContent = obj ? `Edit ${mode === 'array' ? 'array' : mode === 'code' ? 'code block' : mode === 'arrow' ? 'arrow name' : mode === 'tree' ? 'tree' : mode === 'memory' ? 'stack / heap diagram' : mode === 'linkedlist' ? 'linked list' : 'text note'}` : heading[0];
+    document.getElementById('modalSubmit').textContent = obj ? 'Save changes' : 'Choose placement';
+    document.getElementById('modalDescription').textContent = heading[1];
+    if (mode === 'array') {
+      arrayInput.value = obj ? obj.values.join(', ') : '';
+      arrayNameInput.value = obj?.label || 'arr';
+    }
+    if (mode === 'code') {
+      codeLanguage.value = obj ? languageOf(obj) : 'javascript';
+      codeInput.value = obj?.code || CODE_SAMPLES[codeLanguage.value]; updateCodeHelp();
+    }
+    if (mode === 'linkedlist') {
+      linkedlistNameInput.value = obj?.label || 'list'; linkedlistKind.value = obj?.listKind || 'singly';
+      linkedlistInput.value = obj ? JSON.stringify(obj.values) : '10, 20, 30';
+      document.getElementById('linkedlistError').hidden = true;
+    }
+    if (mode === 'memory') {
+      const data = obj || MEMORY_SAMPLES.shared;
+      memoryNameInput.value = data.label; memoryStackInput.value = data.stackSource; memoryHeapInput.value = data.heapSource;
+      document.getElementById('memoryExample').value = ''; document.getElementById('memoryError').hidden = true;
+    }
+    if (mode === 'tree') {
+      treeNameInput.value = obj?.label || 'tree'; treeFormat.value = obj?.treeFormat || 'binary';
+      treeInput.value = obj?.treeSource || TREE_SAMPLES[treeFormat.value]; updateTreeHelp();
+    }
+    if (mode === 'text') textInput.value = obj?.text || '';
+    if (mode === 'arrow') arrowNameInput.value = obj?.label || '';
+    modalBackdrop.hidden = false;
+    setTimeout(() => (mode === 'array' ? arrayInput : mode === 'code' ? codeInput : mode === 'arrow' ? arrowNameInput : mode === 'tree' ? treeInput : mode === 'memory' ? memoryStackInput : mode === 'linkedlist' ? linkedlistInput : textInput).focus(), 0);
+  }
+  function closeModal() { modalBackdrop.hidden = true; modalMode = null; modalEditId = null; document.getElementById('modalSubmit').textContent = 'Add to board'; }
+  function submitModal() {
+    if (modalMode === 'linkedlist') {
+      let values; const listKind = linkedlistKind.value;
+      try { values = parseLinkedList(linkedlistInput.value, listKind); }
+      catch (error) { const message = document.getElementById('linkedlistError'); message.textContent = error.message; message.hidden = false; linkedlistInput.focus(); return; }
+      const data = { label: linkedlistNameInput.value.trim().slice(0, 48) || 'list', listKind, values };
+      if (modalEditId) {
+        const obj = getObject(modalEditId); if (!obj) { closeModal(); return; }
+        Object.assign(obj, data); render(); recordHistory();
+      } else startPlacement({ id: newId(), type: 'linkedlist', x: 0, y: 0, color: currentColor(), ...data });
+    } else if (modalMode === 'memory') {
+      const stackSource = memoryStackInput.value.trim(), heapSource = memoryHeapInput.value.trim();
+      let memory;
+      try { memory = parseMemory(stackSource, heapSource); }
+      catch (error) { const message = document.getElementById('memoryError'); message.textContent = error.message; message.hidden = false; return; }
+      const data = { label: memoryNameInput.value.trim().slice(0, 48) || 'Stack / Heap', stackSource, heapSource, memory };
+      if (modalEditId) {
+        const obj = getObject(modalEditId); if (!obj) { closeModal(); return; }
+        Object.assign(obj, data); render(); recordHistory();
+      } else startPlacement({ id: newId(), type: 'memory', x: 0, y: 0, color: currentColor(), ...data });
+    } else if (modalMode === 'tree') {
+      const treeSource = treeInput.value.trimEnd(), format = treeFormat.value;
+      let nodes;
+      try { nodes = parseTree(treeSource, format); }
+      catch (error) { const message = document.getElementById('treeError'); message.textContent = error.message; message.hidden = false; treeInput.focus(); return; }
+      const data = { label: treeNameInput.value.trim().slice(0, 48) || 'tree', treeFormat: format, treeSource, nodes };
+      if (modalEditId) {
+        const obj = getObject(modalEditId); if (!obj) { closeModal(); return; }
+        Object.assign(obj, data); render(); recordHistory();
+      } else startPlacement({ id: newId(), type: 'tree', x: 0, y: 0, color: currentColor(), ...data });
+    } else if (modalMode === 'array') {
+      const raw = arrayInput.value.trim().replace(/^\[/, '').replace(/\]$/, '');
+      const parts = raw.split(/[\s,]+/).filter(Boolean);
+      const values = parts.map(Number);
+      if (!values.length || values.some(value => !Number.isFinite(value))) { toast('Enter numbers separated by commas or spaces.'); return; }
+      if (values.length > 30) { toast('Arrays are limited to 30 values.'); return; }
+      const label = arrayNameInput.value.trim().slice(0, 48) || 'arr';
+      if (modalEditId) {
+        const obj = getObject(modalEditId); if (!obj) { closeModal(); return; }
+        obj.values = values; obj.label = label;
+        if (obj.highlightedIndex >= values.length) delete obj.highlightedIndex;
+        render(); recordHistory();
+      } else {
+        startPlacement({ id: newId(), type: 'array', x: 0, y: 0, values, color: currentColor(), label });
+      }
+    } else if (modalMode === 'code') {
+      const code = codeInput.value.replace(/\s+$/, '');
+      if (!code.trim()) { toast('Add some code before placing the block.'); return; }
+      const language = codeLanguage.value === 'python' ? 'python' : 'javascript';
+      if (modalEditId) {
+        const obj = getObject(modalEditId); if (!obj) { closeModal(); return; }
+        if (obj.code !== code || languageOf(obj) !== language) {
+          disposeCodeRun(obj.id); delete obj.output;
+          const lines = code.split('\n'); obj.code = code; obj.language = language; obj.w = Math.min(690, Math.max(260, Math.max(12,...lines.map(line=>line.length))*7.35+72)); obj.h = 23 + lines.length*22; render(); recordHistory();
+        }
+      } else createCodeObject(code, 'Code block', language);
+    } else if (modalMode === 'arrow') {
+      const obj = getObject(modalEditId); if (!obj) { closeModal(); return; }
+      const label = arrowNameInput.value.trim().slice(0, 48);
+      if (label !== (obj.label || '')) {
+        if (label) obj.label = label; else delete obj.label;
+        render(); recordHistory();
+      }
+    } else if (modalMode === 'text') {
+      const text = textInput.value.trim();
+      if (!text) { toast('Write a note before placing it.'); return; }
+      const lines = text.split('\n'); const w = Math.max(90, Math.max(...lines.map(line => line.length)) * 9.3); const h = lines.length * 24 + 8;
+      if (modalEditId) {
+        const obj = getObject(modalEditId); if (!obj) { closeModal(); return; }
+        obj.text=text; obj.w=w; obj.h=h; render(); recordHistory();
+      } else { startPlacement({ id: newId(), type: 'text', x: 0, y: 0, text, w, h, color: currentColor() }); }
+    }
+    closeModal();
+    document.activeElement?.blur();
+  }
+  function drawPreview() {
+    previewLayer.replaceChildren();
+    if (!pointerAction) return;
+    if (pointerAction.kind === 'pen') {
+      const points = pointerAction.points;
+      const d = points.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ');
+      el('path', { d, fill: 'none', stroke: pointerAction.color, 'stroke-width': 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, previewLayer);
+    } else if (pointerAction.kind === 'rect' || pointerAction.kind === 'marquee') {
+      const { start, current } = pointerAction; const x = Math.min(start.x,current.x), y = Math.min(start.y,current.y);
+      el('rect', { x, y, width: Math.abs(current.x-start.x), height: Math.abs(current.y-start.y), rx: 7, fill: '#edf2ff', 'fill-opacity': .55, stroke: pointerAction.color, 'stroke-width': 2, 'stroke-dasharray': '5 4' }, previewLayer);
+    } else if (pointerAction.kind === 'arrow') {
+      const { start, current } = pointerAction;
+      el('line', { x1: start.x, y1: start.y, x2: current.x, y2: current.y, stroke: pointerAction.color, 'stroke-width': 2.5, 'stroke-dasharray': '5 4', 'marker-end': 'url(#arrowHead)' }, previewLayer);
+    }
+  }
+  // This function is serialized into a dedicated worker; it never executes on the UI thread.
+  function codeWorkerMain() {
+    const send = self.postMessage.bind(self);
+    let lineCount = 0, characterCount = 0, truncated = false;
+    function format(value) {
+      if (typeof value === 'string') return value;
+      if (value instanceof Error) return `${value.name}: ${value.message}`;
+      if (typeof value === 'bigint') return `${value}n`;
+      if (typeof value !== 'object' || value === null) return String(value);
+      try {
+        const seen = new WeakSet();
+        return JSON.stringify(value, (key, item) => {
+          if (typeof item === 'bigint') return `${item}n`;
+          if (item && typeof item === 'object') {
+            if (seen.has(item)) return '[Circular]';
+            seen.add(item);
+          }
+          return item;
+        }) || String(value);
+      } catch { return '[Unprintable value]'; }
+    }
+    function log(prefix, values) {
+      if (truncated) return;
+      const line = prefix + values.map(format).join(' ');
+      if (lineCount >= 100 || characterCount + line.length > 12000) {
+        truncated = true; send({ type: 'line', text: '… Output limit reached' }); return;
+      }
+      lineCount++; characterCount += line.length;
+      send({ type: 'line', text: line.slice(0, 2000) + (line.length > 2000 ? '…' : '') });
+    }
+    self.console = {
+      log: (...values) => log('', values), info: (...values) => log('', values),
+      debug: (...values) => log('', values), warn: (...values) => log('Warning: ', values),
+      error: (...values) => log('Error: ', values), table: value => log('', [value]),
+      assert: (condition, ...values) => { if (!condition) log('Assertion failed: ', values); }
+    };
+    self.onmessage = async event => {
+      try {
+        const AsyncFunction = Object.getPrototypeOf(async function() {}).constructor;
+        const result = await new AsyncFunction(`"use strict";\n${event.data}`)();
+        if (result !== undefined) log('Return: ', [result]);
+        send({ type: 'done' });
+      } catch (error) {
+        send({ type: 'error', text: format(error).slice(0, 2000) });
+      }
+    };
+  }
+  function pythonWorkerMain(indexURL) {
+    const send = self.postMessage.bind(self);
+    let lines = 0, characters = 0, truncated = false;
+    function output(text) {
+      if (truncated) return;
+      text = String(text);
+      if (lines >= 100 || characters + text.length > 12000) {
+        truncated = true; send({ type: 'line', text: '… Output limit reached' }); return;
+      }
+      lines++; characters += text.length;
+      send({ type: 'line', text: text.slice(0, 2000) + (text.length > 2000 ? '…' : '') });
+    }
+    function outputWriter() {
+      const decoder = new TextDecoder();
+      let pending = '';
+      function append(text) {
+        const parts = text.split('\n');
+        parts.forEach((part, index) => {
+          pending = (pending + part).slice(0, 2001);
+          if (index < parts.length - 1) { output(pending); pending = ''; }
+        });
+      }
+      return {
+        write(buffer) { append(decoder.decode(buffer, { stream: true })); return buffer.length; },
+        flush() { append(decoder.decode()); if (pending) { output(pending); pending = ''; } }
+      };
+    }
+    self.onmessage = async event => {
+      let pyodide;
+      const stdout = outputWriter(), stderr = outputWriter();
+      try {
+        const { loadPyodide } = await import(indexURL + 'pyodide.mjs');
+        pyodide = await loadPyodide({ indexURL });
+      } catch (error) {
+        send({ type: 'error', text: `Could not load Python. Check your internet connection and try again. ${String(error.message || error).slice(0, 300)}` });
+        return;
+      }
+      try {
+        pyodide.setStdout({ write: stdout.write });
+        pyodide.setStderr({ write: stderr.write });
+        pyodide.setStdin({ stdin: () => undefined });
+        send({ type: 'ready' });
+        const result = await pyodide.runPythonAsync(event.data, { filename: 'codeblock.py' });
+        try {
+          // Flush print(..., end="") before displaying the final expression.
+          pyodide.runPython('import sys; sys.stdout.flush(); sys.stderr.flush()');
+          stdout.flush(); stderr.flush();
+          if (result !== undefined && result !== null) output(result === true ? 'True' : result === false ? 'False' : String(result));
+        }
+        finally { result?.destroy?.(); }
+        send({ type: 'done' });
+      } catch (error) {
+        try { pyodide.runPython('import sys; sys.stdout.flush(); sys.stderr.flush()'); } catch {}
+        stdout.flush(); stderr.flush();
+        send({ type: 'error', text: String(error.message || error).slice(-2000) });
+      }
+    };
+  }
+  function disposeCodeRun(id) {
+    const run = codeRuns.get(id); if (!run) return;
+    run.worker?.terminate(); clearTimeout(run.timer); clearTimeout(run.commitTimer);
+    if (run.url) URL.revokeObjectURL(run.url);
+    codeRuns.delete(id);
+  }
+  function finishCodeRun(id, status = 'done', message = '') {
+    const run = codeRuns.get(id); if (!run || !['loading', 'running'].includes(run.status)) return;
+    run.worker?.terminate(); run.worker = null; clearTimeout(run.timer);
+    run.status = status;
+    if (message) run.lines.push(message);
+    function commit() {
+      if (codeRuns.get(id) !== run) return;
+      if (getObject(id) !== run.obj || run.obj.code !== run.code || languageOf(run.obj) !== run.language) { disposeCodeRun(id); return; }
+      // Do not commit a half-finished drag or overwrite an open editor's changes.
+      if (pointerAction || modalMode) { run.commitTimer = setTimeout(commit, 100); return; }
+      run.obj.output = { status: run.status, lines: [...run.lines] };
+      disposeCodeRun(id); render(); recordHistory();
+    }
+    commit();
+  }
+  function runCode(id) {
+    const obj = getObject(id);
+    if (!obj || obj.type !== 'code' || codeRuns.has(id) || pointerAction || modalMode) return;
+    const language = languageOf(obj);
+    const run = { obj, code: obj.code, language, status: language === 'python' ? 'loading' : 'running', lines: [], worker: null, url: null, timer: 0, commitTimer: 0 };
+    codeRuns.set(id, run);
+    try {
+      const workerMain = language === 'python' ? pythonWorkerMain : codeWorkerMain;
+      run.url = URL.createObjectURL(new Blob([`(${workerMain.toString()})(${JSON.stringify(PYODIDE_URL)});`], { type: 'text/javascript' }));
+      run.worker = new Worker(run.url, { type: language === 'python' ? 'module' : 'classic' });
+      run.worker.onmessage = event => {
+        if (codeRuns.get(id) !== run || !['loading', 'running'].includes(run.status)) return;
+        const data = event.data;
+        if (!data || typeof data !== 'object') return;
+        if (data.type === 'ready' && run.status === 'loading') {
+          clearTimeout(run.timer); run.status = 'running';
+          run.timer = setTimeout(() => finishCodeRun(id, 'error', 'Timed out after 3 seconds.'), 3000); render();
+        } else if (data.type === 'line' && typeof data.text === 'string' && run.lines.length < 101) {
+          run.lines.push(data.text.slice(0, 2001));
+        } else if (data.type === 'done') finishCodeRun(id);
+        else if (data.type === 'error') finishCodeRun(id, 'error', String(data.text).slice(0, 2000));
+      };
+      run.worker.onerror = event => {
+        event.preventDefault(); finishCodeRun(id, 'error', event.message || 'Could not run this code.');
+      };
+      run.timer = language === 'python'
+        ? setTimeout(() => finishCodeRun(id, 'error', 'Python could not finish loading. Check your internet connection and try again.'), 45000)
+        : setTimeout(() => finishCodeRun(id, 'error', 'Timed out after 3 seconds.'), 3000);
+      run.worker.postMessage(obj.code);
+    } catch (error) { finishCodeRun(id, 'error', `Runner unavailable: ${error.message}`); }
+    render();
+  }
+  function activateObjectButton(button) {
+    const id = button.closest('[data-id]')?.dataset.id;
+    const obj = getObject(id); if (!obj) return;
+    if (['array', 'arrow', 'tree', 'memory', 'linkedlist'].includes(button.dataset.objectEdit) && obj.type === button.dataset.objectEdit) {
+      selectedIds = new Set([id]); render(); startModal(obj.type, obj); return;
+    }
+    const action = button.dataset.codeAction;
+    if (action === 'run') runCode(id);
+    else if (action === 'edit') { selectedIds = new Set([id]); render(); startModal('code', obj); }
+    else if (action === 'stop') finishCodeRun(id, 'stopped', 'Stopped.');
+    else if (action === 'clear') { disposeCodeRun(id); delete obj.output; render(); recordHistory(); }
+  }
+  function segmentHitsBox(a, b, left, top, right, bottom) {
+    // Clip the entire swept segment so fast drags cannot skip narrow objects.
+    let enter = 0, exit = 1;
+    for (const [start, delta, min, max] of [[a.x, b.x - a.x, left, right], [a.y, b.y - a.y, top, bottom]]) {
+      if (delta === 0) { if (start < min || start > max) return false; }
+      else {
+        const t1 = (min - start) / delta, t2 = (max - start) / delta;
+        enter = Math.max(enter, Math.min(t1, t2)); exit = Math.min(exit, Math.max(t1, t2));
+        if (enter > exit) return false;
+      }
+    }
+    return true;
+  }
+  function pointSegmentDistance(p, a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const t = dx || dy ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy))) : 0;
+    return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy);
+  }
+  function segmentsTouch(a, b, c, d, radius) {
+    const cross = (p, q, r) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+    if (cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0) return true;
+    return Math.min(pointSegmentDistance(a,c,d), pointSegmentDistance(b,c,d), pointSegmentDistance(c,a,b), pointSegmentDistance(d,a,b)) <= radius;
+  }
+  function eraserHitsObject(obj, from, to) {
+    const radius = 6 / state.view.zoom, b = bounds(obj), scale = objectScale(obj);
+    if (!segmentHitsBox(from, to, obj.x - radius, obj.y - radius, obj.x + b.w + radius, obj.y + b.h + radius)) return false;
+    if (obj.type !== 'stroke' && obj.type !== 'arrow') return true;
+    const label = obj.type === 'arrow' ? arrowLabelBounds(obj) : null;
+    if (label && segmentHitsBox(from, to, obj.x + label.x * scale - radius, obj.y + label.y * scale - radius, obj.x + (label.x + label.w) * scale + radius, obj.y + (label.y + label.h) * scale + radius)) return true;
+    // Hit the actual line, rather than empty space inside a stroke's bounding box.
+    const points = obj.type === 'stroke' ? obj.points : [[obj.x1,obj.y1],[obj.x2,obj.y2]];
+    const worldPoints = points.map(([x,y]) => ({ x: obj.x + x * scale, y: obj.y + y * scale }));
+    const tolerance = radius + (obj.size || 2.5) / (2 * state.view.zoom);
+    return worldPoints.some((point, i) => segmentsTouch(from, to, worldPoints[Math.max(0, i - 1)], point, tolerance));
+  }
+  function eraseTo(point) {
+    const action = pointerAction;
+    const remaining = state.objects.filter(obj => !eraserHitsObject(obj, action.last, point));
+    action.last = point;
+    if (remaining.length === state.objects.length) return;
+    state.objects = remaining; action.changed = true; render();
+  }
+  function highlightArrayCell(id, index) {
+    const obj = getObject(id);
+    if (!obj || obj.type !== 'array' || !Number.isInteger(index) || index < 0 || index >= obj.values.length || obj.highlightedIndex === index) return;
+    obj.highlightedIndex = index;
+    render(); recordHistory();
+  }
+  function beginAction(event) {
+    if (event.button !== 0 || modalMode || pointerAction) return;
+    // Return keyboard shortcuts to the board after editing its title or color.
+    document.activeElement?.blur();
+    const target = event.target.closest?.('[data-id]');
+    const tool = spaceHeld ? 'pan' : activeTool;
+    const p = worldPoint(event);
+    if (tool === 'select' && event.target.closest?.('[data-code-action], [data-object-edit]')) return;
+    if (pendingObject && tool !== 'pan') {
+      const obj = { ...pendingObject, x: p.x, y: p.y };
+      setTool('select'); addObject(obj); event.preventDefault(); return;
+    }
+    if (tool === 'select') {
+      const corner = event.target.closest?.('[data-resize]')?.dataset.resize;
+      if (target && corner) {
+        const obj = getObject(target.dataset.id), b = bounds(obj);
+        pointerAction = { kind: 'resize', id: obj.id, start: p, origin: clone(obj), size: b, corner, moved: false };
+      } else if (target) {
+        if (event.shiftKey) selectObject(target.dataset.id, true);
+        else if (!selectedIds.has(target.dataset.id)) selectObject(target.dataset.id);
+        pointerAction = { kind: 'move', start: p, origins: selectedObjects().map(obj => ({ id: obj.id, x: obj.x, y: obj.y })), moved: false };
+        const cell = event.target.closest?.('[data-array-index]');
+        if (cell && !event.shiftKey) pointerAction.cell = { id: target.dataset.id, index: Number(cell.dataset.arrayIndex) };
+      } else if (event.shiftKey) {
+        const initial = [...selectedIds];
+        selectedIds = new Set(initial);
+        pointerAction = { kind: 'marquee', start: p, current: p, initial, color: '#3968e8' };
+      } else {
+        selectedIds.clear();
+        pointerAction = { kind: 'pan', start: localPoint(event), origin: { x: state.view.x, y: state.view.y } };
+        svg.classList.add('dragging');
+      }
+      render();
+    } else if (tool === 'pan') {
+      pointerAction = { kind: 'pan', start: localPoint(event), origin: { x: state.view.x, y: state.view.y } };
+      svg.classList.add('dragging');
+    } else if (tool === 'erase') {
+      pointerAction = { kind: 'erase', last: p, objects: [...state.objects], selection: [...selectedIds], changed: false };
+      selectedIds.clear(); eraseTo(p); render();
+    } else if (tool === 'pen') pointerAction = { kind: 'pen', points: [p], color: currentColor() };
+    else if (tool === 'rect' || tool === 'arrow') pointerAction = { kind: tool, start: p, current: p, color: currentColor() };
+    else return;
+    pointerAction.pointerId = event.pointerId;
+    svg.setPointerCapture(event.pointerId); drawPreview(); event.preventDefault();
+  }
+  function moveAction(event) {
+    if (!pointerAction) { if (pendingObject && !spaceHeld) showPlacement(event); return; }
+    if (pointerAction.pointerId !== event.pointerId) return;
+    const action = pointerAction, p = worldPoint(event);
+    if (action.kind === 'erase') {
+      eraseTo(p);
+    } else if (action.kind === 'move') {
+      const dx = p.x - action.start.x, dy = p.y - action.start.y;
+      if (Math.hypot(dx, dy) * state.view.zoom > 3) action.moved = true;
+      if (!action.moved) return;
+      action.origins.forEach(origin => { const obj = getObject(origin.id); if (obj) { obj.x = origin.x + dx; obj.y = origin.y + dy; } });
+      render();
+    } else if (action.kind === 'resize') {
+      const obj = getObject(action.id); if (!obj) return;
+      const { origin, size, corner } = action;
+      const sx = corner.includes('e') ? 1 : -1, sy = corner.includes('s') ? 1 : -1;
+      const dx = p.x - action.start.x, dy = p.y - action.start.y;
+      if (Math.hypot(dx, dy) * state.view.zoom > 3) action.moved = true;
+      if (!action.moved) return;
+      let w, h;
+      if (obj.type === 'rect') {
+        w = Math.max(12, size.w + sx * dx); h = Math.max(12, size.h + sy * dy);
+        obj.w = w / objectScale(origin); obj.h = h / objectScale(origin);
+      } else {
+        const ratio = Math.max(.2 / objectScale(origin), Math.min(12 / objectScale(origin), 1 + (sx * dx * size.w + sy * dy * size.h) / (size.w ** 2 + size.h ** 2)));
+        obj.scale = objectScale(origin) * ratio;
+        w = size.w * ratio; h = size.h * ratio;
+      }
+      obj.x = origin.x + (sx < 0 ? size.w - w : 0);
+      obj.y = origin.y + (sy < 0 ? size.h - h : 0);
+      render();
+    } else if (action.kind === 'pan') {
+      const local = localPoint(event); state.view.x = action.origin.x + local.x - action.start.x; state.view.y = action.origin.y + local.y - action.start.y; render();
+    } else {
+      if (action.kind === 'pen') {
+        const last = action.points[action.points.length - 1];
+        if (Math.hypot(p.x - last.x, p.y - last.y) > 1.2) action.points.push(p);
+      } else action.current = p;
+      if (action.kind === 'marquee') {
+        const left = Math.min(action.start.x, p.x), top = Math.min(action.start.y, p.y);
+        const right = Math.max(action.start.x, p.x), bottom = Math.max(action.start.y, p.y);
+        selectedIds = new Set(action.initial);
+        if (Math.hypot(p.x - action.start.x, p.y - action.start.y) * state.view.zoom > 3) {
+          state.objects.forEach(obj => { const b = bounds(obj); if (obj.x <= right && obj.x + b.w >= left && obj.y <= bottom && obj.y + b.h >= top) selectedIds.add(obj.id); });
+        }
+        render();
+      }
+      drawPreview();
+    }
+  }
+  function cancelAction() {
+    if (!pointerAction) return;
+    const action = pointerAction; pointerAction = null;
+    if (action.kind === 'move') action.origins.forEach(origin => { const obj = getObject(origin.id); if (obj) { obj.x = origin.x; obj.y = origin.y; } });
+    else if (action.kind === 'resize') { const obj = getObject(action.id); if (obj) { delete obj.scale; Object.assign(obj, action.origin); } }
+    else if (action.kind === 'pan') Object.assign(state.view, action.origin);
+    else if (action.kind === 'marquee') selectedIds = new Set(action.initial);
+    else if (action.kind === 'erase') { state.objects = action.objects; selectedIds = new Set(action.selection); queueSave(); }
+    if (svg.hasPointerCapture(action.pointerId)) svg.releasePointerCapture(action.pointerId);
+    svg.classList.remove('dragging'); previewLayer.replaceChildren(); render();
+  }
+  function finishAction(event) {
+    if (!pointerAction || (event && event.pointerId !== pointerAction.pointerId)) return;
+    if (event?.type === 'pointerup') moveAction(event);
+    const action = pointerAction; pointerAction = null; svg.classList.remove('dragging'); previewLayer.replaceChildren();
+    if (svg.hasPointerCapture(action.pointerId)) svg.releasePointerCapture(action.pointerId);
+    if (action.kind === 'marquee') return;
+    if (action.kind === 'erase') { if (action.changed) recordHistory(); return; }
+    if (action.kind === 'move' || action.kind === 'resize') {
+      if (action.moved) recordHistory();
+      else if (action.cell) highlightArrayCell(action.cell.id, action.cell.index);
+      return;
+    }
+    if (action.kind === 'pan') { recordHistory(); return; }
+    if (action.kind === 'pen') {
+      const xs = action.points.map(p => p.x), ys = action.points.map(p => p.y); const minX = Math.min(...xs), minY = Math.min(...ys);
+      const maxX = Math.max(...xs), maxY = Math.max(...ys);
+      const points = action.points.map(p => [p.x-minX, p.y-minY]);
+      addObject({ id: newId(), type: 'stroke', x: minX, y: minY, w: maxX-minX, h: maxY-minY, points, color: action.color, size: 3 });
+    } else if (action.kind === 'rect') {
+      const w = Math.abs(action.current.x-action.start.x), h = Math.abs(action.current.y-action.start.y);
+      if (w < 8 || h < 8) { toast('Drag to draw a rectangle.'); return; }
+      addObject({ id: newId(), type: 'rect', x: Math.min(action.start.x,action.current.x), y: Math.min(action.start.y,action.current.y), w, h, color: action.color, fill: '#f5f8ff', opacity: .72 });
+    } else if (action.kind === 'arrow') {
+      const dx = action.current.x-action.start.x, dy = action.current.y-action.start.y;
+      if (Math.hypot(dx,dy) < 8) { toast('Drag to draw an arrow.'); return; }
+      const x = Math.min(action.start.x,action.current.x), y = Math.min(action.start.y,action.current.y);
+      addObject({ id: newId(), type: 'arrow', x, y, w: Math.max(4,Math.abs(dx)), h: Math.max(4,Math.abs(dy)), x1:action.start.x-x, y1:action.start.y-y, x2:action.current.x-x, y2:action.current.y-y, color:action.color });
+    }
+  }
+  function zoomAt(newZoom, clientX, clientY) {
+    if (pointerAction) return;
+    const zoom = Math.min(2.5, Math.max(.35, newZoom));
+    const px = svg.createSVGPoint(); px.x = clientX; px.y = clientY;
+    const screen = px.matrixTransform(svg.getScreenCTM().inverse());
+    const worldBefore = px.matrixTransform(world.getScreenCTM().inverse());
+    state.view.zoom = zoom;
+    state.view.x = screen.x - worldBefore.x * zoom;
+    state.view.y = screen.y - worldBefore.y * zoom;
+    render(); recordHistory();
+  }
+  function resetView() { cancelAction(); state.view = { x: 0, y: 0, zoom: 1 }; render(); recordHistory(); }
+  function deleteBoard() {
+    if (!state.objects.length) return;
+    if (!confirm('Clear every object from this board? This cannot be undone after you close the page.')) return;
+    setTool('select'); state.objects = []; selectedIds.clear(); render(); recordHistory();
+  }
+  function loadDemo() {
+    setTool('select');
+    const center = visibleCenter();
+    const code = 'const values = [3, 1, 4, 1, 5];\n\nfor (let i = 0; i < values.length; i++) {\n    console.log(i, values[i]);\n}';
+    const w = Math.max(310, 30 * 7.35 + 72); const h = 23 + code.split('\n').length * 22;
+    state.objects = [
+      { id:newId(), type:'array', x:center.x-210, y:center.y-160, values:[3,1,4,1,5], color:'#547ae2', label:'values' },
+      { id:newId(), type:'code', x:center.x-160, y:center.y+5, w, h, code, label:'Loop example' },
+      { id:newId(), type:'arrow', x:center.x-20, y:center.y-75, w:4, h:48, x1:0, y1:0, x2:0, y2:48, color:'#e79a43' },
+      { id:newId(), type:'text', x:center.x-210, y:center.y-190, text:'Index → value', w:150, h:28, color:'#687a95' }
+    ];
+    selectedIds = new Set([state.objects[1].id]); render(); recordHistory(); toast('Example loaded. Drag any object to rearrange it.');
+  }
+  function download(name, mime, data) {
+    const blob = data instanceof Blob ? data : new Blob([data], { type:mime });
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+  function safeName() { return (state.title || 'codeboard').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'codeboard'; }
+  function exportSvg() {
+    const cloneSvg = svg.cloneNode(true); cloneSvg.setAttribute('xmlns',NS); cloneSvg.setAttribute('width',svg.clientWidth); cloneSvg.setAttribute('height',svg.clientHeight);
+    cloneSvg.querySelectorAll('.selection-outline, #previewLayer, .code-controls, .array-controls, .arrow-controls, .tree-controls, .memory-controls, .linkedlist-controls, .arrow-hit-target').forEach(node => node.remove());
+    const style = document.createElementNS(NS,'style');
+    style.textContent = `text{font-family:Inter,Arial,sans-serif}.board-object{cursor:default}`;
+    cloneSvg.insertBefore(style, cloneSvg.firstChild);
+    const serialized = new XMLSerializer().serializeToString(cloneSvg);
+    download(`${safeName()}.svg`,'image/svg+xml;charset=utf-8',serialized); toast('SVG downloaded.');
+  }
+  function exportPng() {
+    const cloneSvg = svg.cloneNode(true); cloneSvg.setAttribute('xmlns',NS); cloneSvg.setAttribute('width',svg.clientWidth); cloneSvg.setAttribute('height',svg.clientHeight);
+    cloneSvg.querySelectorAll('.selection-outline, #previewLayer, .code-controls, .array-controls, .arrow-controls, .tree-controls, .memory-controls, .linkedlist-controls, .arrow-hit-target').forEach(node => node.remove());
+    const style = document.createElementNS(NS,'style'); style.textContent = `text{font-family:Inter,Arial,sans-serif}`; cloneSvg.insertBefore(style,cloneSvg.firstChild);
+    const xml = new XMLSerializer().serializeToString(cloneSvg); const blob = new Blob([xml],{type:'image/svg+xml;charset=utf-8'}); const url = URL.createObjectURL(blob); const image = new Image();
+    image.onload = () => { const canvas = document.createElement('canvas'); canvas.width = svg.clientWidth * 2; canvas.height = svg.clientHeight * 2; const ctx = canvas.getContext('2d'); ctx.scale(2,2); ctx.fillStyle='#fcfdff'; ctx.fillRect(0,0,svg.clientWidth,svg.clientHeight); ctx.drawImage(image,0,0,svg.clientWidth,svg.clientHeight); URL.revokeObjectURL(url); canvas.toBlob(png => { if (png) download(`${safeName()}.png`,'image/png',png); else toast('PNG export failed. Try SVG instead.'); },'image/png'); };
+    image.onerror = () => { URL.revokeObjectURL(url); toast('PNG export failed. Try SVG instead.'); };
+    image.src=url;
+  }
+  function exportJson() {
+    const file = { format:'codeboard', version:1, title:state.title, objects:state.objects, view:state.view };
+    download(`${safeName()}.codeboard.json`,'application/json',JSON.stringify(file,null,2)); toast('Editable board downloaded.');
+  }
+  async function importJson(file) {
+    try {
+      const parsed = JSON.parse(await file.text());
+      const objects = Array.isArray(parsed.objects) ? parsed.objects : parsed.format === 'codeboard' && Array.isArray(parsed.board?.objects) ? parsed.board.objects : null;
+      if (!objects || objects.some(obj => !obj || typeof obj.type !== 'string' || !Number.isFinite(obj.x) || !Number.isFinite(obj.y))) throw new Error('That file does not look like a Codeboard board.');
+      for (const obj of objects) {
+        if (obj.type === 'tree') obj.nodes = parseTree(String(obj.treeSource || ''), obj.treeFormat);
+        if (obj.type === 'linkedlist') {
+          if (!Array.isArray(obj.values)) throw new Error('Linked list values must be an array.');
+          obj.values = parseLinkedList(JSON.stringify(obj.values), obj.listKind);
+        }
+        if (obj.type === 'memory') obj.memory = parseMemory(String(obj.stackSource || ''), String(obj.heapSource || ''));
+      }
+      setTool('select');
+      state.title = String(parsed.title || 'Imported board').slice(0,48); state.objects = objects; state.view = { ...defaultState.view, ...(parsed.view || {}) };
+      selectedIds.clear(); render(); recordHistory(); toast('Board imported.');
+    } catch (error) { toast(error.message || 'Could not import that file.'); }
+  }
+  function autoIndent(event) {
+    if (event.key === 'Tab') {
+      event.preventDefault(); const start = codeInput.selectionStart, end = codeInput.selectionEnd, value = codeInput.value;
+      codeInput.value = value.slice(0,start) + '    ' + value.slice(end); codeInput.selectionStart = codeInput.selectionEnd = start + 4; return;
+    }
+    if (event.key === '}' || event.key === ']' || event.key === ')') {
+      const start = codeInput.selectionStart, end = codeInput.selectionEnd, value = codeInput.value;
+      if (start !== end) return;
+      const lineStart = value.lastIndexOf('\n',start-1)+1; const before = value.slice(lineStart,start);
+      if (/^\s+$/.test(before) && before.length >= 4) {
+        event.preventDefault(); const indent = before.slice(0,Math.max(0,before.length-4)); codeInput.value = value.slice(0,lineStart) + indent + event.key + value.slice(end); codeInput.selectionStart = codeInput.selectionEnd = lineStart + indent.length + 1;
+      }
+      return;
+    }
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    const start = codeInput.selectionStart, end = codeInput.selectionEnd, value = codeInput.value;
+    const lineStart = value.lastIndexOf('\n',start-1)+1; const line = value.slice(lineStart,start); const indent = (line.match(/^\s*/) || [''])[0];
+    const trimmed = line.trimEnd(); const after = value.slice(end).match(/^\s*([}\])])/);
+    const opens = /[({\[]\s*$/.test(trimmed) || (codeLanguage.value === 'python' && /:\s*(?:#.*)?$/.test(trimmed));
+    let insertion, caretOffset;
+    if (opens && after) { insertion = `\n${indent}    \n${indent}`; caretOffset = 1 + indent.length + 4; }
+    else {
+      let nextIndent = indent;
+      if (!opens && after && indent.length >= 4 && !trimmed) nextIndent = indent.slice(0,-4);
+      if (opens) nextIndent += '    ';
+      insertion = `\n${nextIndent}`; caretOffset = insertion.length;
+    }
+    codeInput.value = value.slice(0,start) + insertion + value.slice(end);
+    codeInput.selectionStart = codeInput.selectionEnd = start + caretOffset;
+  }
+
+  document.querySelectorAll('.tool-button').forEach(button => button.addEventListener('click', () => {
+    const tool = button.dataset.tool;
+    if (['array', 'code', 'text', 'tree', 'memory', 'linkedlist'].includes(tool)) startModal(tool);
+    else setTool(tool);
+  }));
+  svg.addEventListener('click', event => {
+    if (activeTool !== 'select' || spaceHeld) return;
+    const button = event.target.closest?.('[data-code-action], [data-object-edit]');
+    if (button) activateObjectButton(button);
+  });
+  svg.addEventListener('keydown', event => {
+    const button = event.target.closest?.('[data-code-action], [data-object-edit]');
+    if (button && (event.key === 'Enter' || event.code === 'Space')) {
+      event.preventDefault(); event.stopPropagation(); activateObjectButton(button);
+    }
+  });
+  svg.addEventListener('pointerdown', beginAction);
+  svg.addEventListener('pointermove', moveAction);
+  svg.addEventListener('pointerup', finishAction);
+  svg.addEventListener('pointercancel', cancelAction);
+  svg.addEventListener('pointerleave', () => { if (pendingObject && !pointerAction) previewLayer.replaceChildren(); });
+  document.getElementById('cancelPlacement').addEventListener('click', () => { setTool('select'); render(); });
+  svg.addEventListener('dblclick', event => {
+    if (activeTool !== 'select' || (event.target.closest('[data-resize]') || event.target.closest('[data-code-action], [data-object-edit]'))) return;
+    const target = event.target.closest?.('[data-id]'); if (!target) return;
+    const obj = getObject(target.dataset.id); if (!obj || !['array','code','text','arrow','tree','memory','linkedlist'].includes(obj.type)) return;
+    selectedIds = new Set([obj.id]); render(); startModal(obj.type,obj);
+  });
+  svg.addEventListener('wheel', event => {
+    event.preventDefault();
+    if (!event.deltaY) return;
+    // Respect small trackpad movements and cap larger wheel ticks at about 3%.
+    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? svg.clientHeight : 1;
+    const delta = Math.max(-100, Math.min(100, event.deltaY * unit));
+    zoomAt(state.view.zoom * Math.exp(-delta * .0003), event.clientX, event.clientY);
+  }, { passive:false });
+  document.getElementById('zoomIn').addEventListener('click', () => { const r=svg.getBoundingClientRect(); zoomAt(state.view.zoom*1.15,r.left+r.width/2,r.top+r.height/2); });
+  document.getElementById('zoomOut').addEventListener('click', () => { const r=svg.getBoundingClientRect(); zoomAt(state.view.zoom/1.15,r.left+r.width/2,r.top+r.height/2); });
+  document.getElementById('fitBoard').addEventListener('click', resetView);
+  document.getElementById('undoButton').addEventListener('click', undo);
+  document.getElementById('redoButton').addEventListener('click', () => restoreHistory(historyIndex+1));
+  document.getElementById('clearButton').addEventListener('click', deleteBoard);
+  document.getElementById('demoButton').addEventListener('click', loadDemo);
+  titleInput.addEventListener('input', () => { state.title = titleInput.value || 'Untitled board'; queueSave(); });
+  titleInput.addEventListener('change', recordHistory);
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+  document.getElementById('modalSubmit').addEventListener('click', submitModal);
+  modalBackdrop.addEventListener('pointerdown', event => { if (event.target === modalBackdrop) closeModal(); });
+  codeInput.addEventListener('keydown', autoIndent);
+  codeLanguage.addEventListener('change', () => {
+    if (!modalEditId && Object.values(CODE_SAMPLES).includes(codeInput.value)) codeInput.value = CODE_SAMPLES[codeLanguage.value];
+    updateCodeHelp();
+  });
+  document.getElementById('traversalPlay').addEventListener('click', () => {
+    if (!traversal) return;
+    if (traversal.playing) pauseTraversal();
+    else {
+      if (traversal.index >= traversal.order.length - 1) traversal.index = -1;
+      if (traversal.index < 0) traversal.index = 0;
+      traversal.playing = traversal.index < traversal.order.length - 1;
+      scheduleTraversal();
+    }
+    render();
+  });
+  document.getElementById('traversalBack').addEventListener('click', () => stepTraversal(-1));
+  document.getElementById('traversalNext').addEventListener('click', () => stepTraversal(1));
+  document.getElementById('traversalReset').addEventListener('click', () => {
+    if (!traversal) return;
+    pauseTraversal(); traversal.index = -1; render();
+  });
+  document.getElementById('traversalMode').addEventListener('change', event => {
+    if (!traversal) return;
+    const mode = event.target.value;
+    if (!['preorder', 'inorder', 'postorder', 'levelorder'].includes(mode) || (mode === 'inorder' && traversal.obj.treeFormat !== 'binary')) return;
+    pauseTraversal(); traversal.mode = mode; traversal.order = traversalOrder(traversal.obj, mode); traversal.index = -1; render();
+  });
+  document.getElementById('traversalSpeed').addEventListener('change', event => {
+    if (!traversal) return;
+    const speed = Number(event.target.value);
+    if (![350, 800, 1600].includes(speed)) return;
+    traversal.speed = speed; scheduleTraversal();
+  });
+  document.getElementById('traversalPanel').addEventListener('keydown', event => {
+    // Keep native button/select keys from triggering board movement or deletion.
+    if (!event.ctrlKey && !event.metaKey && event.key !== 'Escape') event.stopPropagation();
+  });
+  linkedlistInput.addEventListener('input', () => { document.getElementById('linkedlistError').hidden = true; });
+  linkedlistInput.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); submitModal(); }
+  });
+  document.getElementById('memoryExample').addEventListener('change', event => {
+    const sample = MEMORY_SAMPLES[event.target.value]; if (!sample) return;
+    memoryNameInput.value = sample.label; memoryStackInput.value = sample.stackSource; memoryHeapInput.value = sample.heapSource;
+    document.getElementById('memoryError').hidden = true; event.target.value = '';
+  });
+  [memoryStackInput, memoryHeapInput].forEach(input => {
+    input.addEventListener('input', () => { document.getElementById('memoryError').hidden = true; });
+    input.addEventListener('keydown', event => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); submitModal(); }
+    });
+  });
+  treeFormat.addEventListener('change', () => {
+    if (!modalEditId && Object.values(TREE_SAMPLES).includes(treeInput.value)) treeInput.value = TREE_SAMPLES[treeFormat.value];
+    updateTreeHelp();
+  });
+  treeInput.addEventListener('input', () => { document.getElementById('treeError').hidden = true; });
+  treeInput.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); submitModal(); return; }
+    if (treeFormat.value !== 'indented' || (event.key !== 'Tab' && event.key !== 'Enter')) return;
+    event.preventDefault();
+    const start = treeInput.selectionStart, end = treeInput.selectionEnd, value = treeInput.value;
+    const line = value.slice(value.lastIndexOf('\n', start - 1) + 1, start);
+    const insertion = event.key === 'Tab' ? '  ' : '\n' + (line.match(/^[ \t]*/) || [''])[0];
+    treeInput.value = value.slice(0, start) + insertion + value.slice(end);
+    treeInput.selectionStart = treeInput.selectionEnd = start + insertion.length;
+  });
+  arrayInput.addEventListener('keydown', event => { if (event.key === 'Enter') submitModal(); });
+  arrowNameInput.addEventListener('keydown', event => { if (event.key === 'Enter') submitModal(); });
+  arrayNameInput.addEventListener('keydown', event => { if (event.key === 'Enter') submitModal(); });
+  textInput.addEventListener('keydown', event => { if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') submitModal(); });
+  document.getElementById('exportButton').addEventListener('click', () => { exportMenu.hidden = !exportMenu.hidden; });
+  exportMenu.addEventListener('click', event => { const button = event.target.closest('[data-export]'); if (!button) return; exportMenu.hidden = true; if (button.dataset.export==='svg') exportSvg(); else if (button.dataset.export==='png') exportPng(); else exportJson(); });
+  document.addEventListener('pointerdown', event => { if (!event.target.closest('.export-wrap')) exportMenu.hidden = true; });
+  document.getElementById('importButton').addEventListener('click', () => document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', event => { const file=event.target.files?.[0]; if (file) importJson(file); event.target.value=''; });
+  document.getElementById('fullscreenButton').addEventListener('click', async () => { try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); } catch { toast('Full screen is not available in this browser.'); } });
+  document.addEventListener('keydown', event => {
+    if (modalMode) { if (event.key === 'Escape') closeModal(); return; }
+    const editing = event.target.matches('input,textarea,select,[contenteditable="true"]');
+    if (!editing && (event.metaKey || event.ctrlKey) && (event.code === 'KeyZ' || event.key.toLowerCase() === 'z')) {
+      event.preventDefault();
+      if (event.shiftKey) { if (!pointerAction) restoreHistory(historyIndex + 1); }
+      else undo();
+      return;
+    }
+    if (!editing && (event.metaKey || event.ctrlKey) && (event.code === 'KeyY' || event.key.toLowerCase() === 'y')) {
+      event.preventDefault(); if (!pointerAction) restoreHistory(historyIndex + 1); return;
+    }
+    if (pointerAction && event.key !== 'Escape') return;
+    if (event.code === 'Space' && !editing) { spaceHeld=true; svg.dataset.tool='pan'; svg.classList.add('dragging'); event.preventDefault(); return; }
+    if (!editing && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a' && !pendingObject) { event.preventDefault(); selectedIds = new Set(state.objects.map(obj => obj.id)); render(); return; }
+    if (!editing && (event.key==='Delete' || event.key==='Backspace')) { event.preventDefault(); deleteSelected(); return; }
+    if (!editing && event.key==='Escape') { setTool('select'); selectedIds.clear(); render(); return; }
+    if (!editing && !pendingObject && selectedIds.size && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
+      event.preventDefault(); const step=event.shiftKey?10:1;
+      selectedObjects().forEach(obj => {
+        if (event.key==='ArrowLeft') obj.x-=step; if (event.key==='ArrowRight') obj.x+=step; if (event.key==='ArrowUp') obj.y-=step; if (event.key==='ArrowDown') obj.y+=step;
+      });
+      render(); recordHistory(); return;
+    }
+    if (!editing && !event.metaKey && !event.ctrlKey) {
+      const key=event.key.toLowerCase(); const map={v:'select',p:'pen',e:'erase',r:'rect',a:'arrow',h:'select'};
+      if (map[key]) setTool(map[key]);
+    }
+  });
+  document.addEventListener('keyup', event => { if (event.code==='Space') { spaceHeld=false; svg.dataset.tool=activeTool; svg.classList.remove('dragging'); } });
+  window.addEventListener('blur', () => { cancelAction(); spaceHeld=false; svg.dataset.tool=activeTool; svg.classList.remove('dragging'); });
+
+  history.push(JSON.stringify({ title:state.title, objects:state.objects, view:state.view })); historyIndex=0;
+  render();
+})();
+</script>
+</body>
+</html>
